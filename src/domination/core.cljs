@@ -4,93 +4,138 @@
 
 (enable-console-print!)
 
+(def iteration 3)
+
 ;(println "This text is printed from src/domination/core.cljs. Go ahead and edit it and see reloading in action.")
 
 (def coin-1 {:label    "Coin"                               ; copper silver gold jewels bag-of-gold
              :desc     "Spend 1"
              :colour   [255 255 150]
-             :category :coin
-             :value    1
+             :coin     1
              :price    1})
 (def coin-2 {:label    "Handful of Coins"                   ; copper silver gold jewels bag-of-gold
              :desc     "Spend 2"
              :colour   [255 255 75]
-             :category :coin
-             :value    2
+             :coin     2
              :price    2})
 (def coin-4 {:label    "Bag of Coins"                       ; copper silver gold jewels bag-of-gold
              :desc     "Spend 4"
              :colour   [255 255 0]
-             :category :coin
-             :value    4
+             :coin     4
              :price    4})
 
 (def move-1 {:label    "Step"                               ; lunge dash run
              :desc     "Move 1"
              :colour   [150 150 255]
-             :category :movement
-             :value    1
+             :move     1
              :price    2})
 (def move-2 {:label    "Lunge"                              ; lunge dash run
              :desc     "Move 2"
              :colour   [100 100 255]
-             :category :movement
-             :value    2
+             :move     2
              :price    4})
 (def move-3 {:label    "Dash"                               ; lunge dash run
              :desc     "Move 3"
              :colour   [50 50 255]
-             :category :movement
-             :value    3
+             :move     3
              :price    8})
 
 (def train  {:label    "Train"                             ; flood, train, hire
              :desc     "Place a new minion"
              :colour   [150 255 150]
-             :category :summon
-             :value    1
              :price    3})
-;(def gc     {:label    "Cleanse"                             ; or trash any unused from hand on every turn?
-;             :desc     "Trash ≥0 tokens from your hand"
-;             :colour   [255 200 50]
-;             :category :summon
-;             :value    1
-;             :price    3})
+
+(def gc     {:label    "Cleanse"                             ; or trash any unused from hand on every turn?
+             :desc     "Trash ≥0 tokens from your hand"
+             :colour   [255 200 50]
+             :price    3})
 
 (def gift   {:label    "Chocolate Cake"
              :desc     "Earn a Victory Point When in the Castle"
              :colour   [255 105 180]
-             :category :victory
-             :price    5})
+             :price    15})
 
 (def club   {:label    "Club"
              :desc     "Dmg: 1, Rng: 1"
              :colour   [255 200 200]
-             :category :weapon
+             :damage   [1]
              :price    2})
 (def sword  {:label    "Sword"
              :desc     "Dmg: 2, Rng: 1"
              :colour   [255 150 150]
-             :category :weapon
+             :damage   [2]
              :price    4})
 (def bsword {:label    "Big Sword"
              :desc     "Dmg: 4, Rng: 1"
              :colour   [255 100 100]
-             :category :weapon
+             :damage   [4]
              :price    6})
 (def bow    {:label    "Bow"                              ; Damage (3 - Range), Range up to 3
              :desc     "Dmg: 4-Rng, Rng: ≤3"
              :colour   [255 75 75]
-             :category :weapon
+             :damage   [3 2 1]
              :price    8})
+
+
+(defn add-desc [{:keys [move damage] :as item}]
+  (assoc item :desc
+              (string/join " "
+                           (remove nil? [(when move (str "M: " move))
+                                         (when damage (str "D: " (string/join "." damage)))]))))
+
+(defn add-colour [{:keys [move damage] :as item}]
+  (let [total-d (reduce + damage)
+        df (- 1 (/ total-d 10))
+        mf (- 1 (/ move 10))
+        r (int (* 255 mf))
+        g (int (* 255 mf df))
+        b (int (* 255 df))]
+    (assoc item :colour [r g b])))
+
+(defn add-price [{:keys [move damage] :as item}]
+  (let [total-d (reduce + (map + damage (range)))
+        d-cost (+ total-d 1)
+        m-cost (if move (Math/pow 2 move) 0)]
+    (assoc item :price (+ m-cost d-cost))))
+
+(def prepare-item (comp add-desc add-colour add-price))
+
+(def peasant (prepare-item {:label  "Peasant"
+                            :move   1}))
+(def knave (prepare-item {:label  "Knave"
+                            :damage [1]}))
+
+(def scout (prepare-item {:label  "Scout"
+                          :move 3}))
+
+(def knight (prepare-item {:label  "Knight"
+                           :move 3
+                           :damage [5]}))
+
+(def axeman (prepare-item {:label  "Axeman"
+                           :move 1
+                           :damage [3]}))
+
+(def pikeman (prepare-item {:label  "Pikeman"
+                           :move 2
+                           :damage [1]}))
+
+(def swordsman (prepare-item {:label  "Swordsman"
+                           :move 2
+                           :damage [2]}))
+
+(def archer (prepare-item {:label  "Archer"
+                           :move 1
+                           :damage [1 1 1 1]}))
+
+(def longbowman (prepare-item {:label  "Longbowman"
+                               :damage [3 2 1]}))
 
 
 (defonce app-state (atom {:text "Knights of Swamp Castle"
                           :hand-count 0
                           :hand-size 5
-                          :draw [coin-1 coin-1 coin-1
-                                 move-1
-                                 train]
+                          :draw [coin-1 coin-1 coin-1 peasant train]
                           :hand []
                           :discard []
                           :trash []
@@ -153,12 +198,20 @@
 (defn sum-categories [m {:keys [category value]}]
   (update m category (fnil + 0) value))
 
+(defn append-str
+  ([] nil)
+  ([string] string)
+  ([string x]
+   (if string
+     (str string ", " x)
+     x)))
+
 (defn hello-world []
 
   (let [{:keys [text hand-size draw hand discard hand-count trash log]} @app-state]
 
     [:div
-     [:h1 text]
+     [:h1 (str text " (" iteration ")")]
 
      [:div
       [:span {:class "h-spaced"} (str " Draw pile: " (count draw))]
@@ -180,11 +233,14 @@
 
       (let [totals (reduce sum-categories {} hand)]
         [:div {:class "available"}
-         [:span {:class "h-spaced"} (str "Spend: " (or (:coin totals) \-))]
-         [:span {:class "h-spaced"} (str "Movement: " (or (:movement totals) \-))]
-         [:span {:class "h-spaced"} (str "Summon: " (or (:summon totals) \-))]
-         [:span {:class "h-spaced"} (str "Weapons: " (frequencies
-                                                       (map :label (filter #(= :weapon (:category %)) hand))))]])]
+         [:span {:class "h-spaced"} (str "Spend: " (transduce (map :coin) + hand))]
+         [:span {:class "h-spaced"} (str "Movement: " (transduce (comp (map :move) (remove nil?)) append-str hand))]
+         ;[:span {:class "h-spaced"} (str "Summon: " (transduce (map :move) + hand))]
+         [:span {:class "h-spaced"} (str "Weapons: "
+                                         (transduce (comp (filter :damage) (map :label)) append-str hand)
+                                         ;(frequencies
+                                         ;              (map :label (filter #(= :weapon (:category %)) hand)))
+                                         )]])]
      [:div {:class "outlined"
             :style {:display "inline-block"}}
       "Trash"
@@ -209,9 +265,12 @@
      [:h3 "Buy"]
 
      (buy-button coin-1) (buy-button coin-2) (buy-button coin-4) [:br]
-     (buy-button move-1) (buy-button move-2) (buy-button move-3) [:br]
-     (buy-button club) (buy-button sword) (buy-button bsword) (buy-button bow) [:br]
-     (buy-button train) (buy-button gift)
+     ;(buy-button move-1) (buy-button move-2) (buy-button move-3) [:br]
+     ;(buy-button club) (buy-button sword) (buy-button bsword) (buy-button bow) [:br]
+     (buy-button train) (buy-button gc) (buy-button gift) [:br]
+     (buy-button peasant) (buy-button knave) (buy-button scout) [:br]
+     (buy-button axeman) (buy-button swordsman) (buy-button pikeman) [:br]
+     (buy-button archer) (buy-button longbowman) (buy-button knight)
 
 
      [:div
