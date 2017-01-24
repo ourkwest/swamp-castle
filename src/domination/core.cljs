@@ -4,41 +4,20 @@
 
 (enable-console-print!)
 
-(def iteration 3)
+(def iteration 4)
 
-;(println "This text is printed from src/domination/core.cljs. Go ahead and edit it and see reloading in action.")
+(def max-coins 10)
+(defn make-money [amount]
+  {:label  (str amount " Coins")
+   :desc   (str "Spend " amount)
+   :colour [255 255 (int (* 255 (- 1 (/ amount max-coins))))]
+   :coin   amount
+   :price  amount})
 
-(def coin-1 {:label    "Coin"                               ; copper silver gold jewels bag-of-gold
-             :desc     "Spend 1"
-             :colour   [255 255 150]
-             :coin     1
-             :price    1})
-(def coin-2 {:label    "Handful of Coins"                   ; copper silver gold jewels bag-of-gold
-             :desc     "Spend 2"
-             :colour   [255 255 75]
-             :coin     2
-             :price    2})
-(def coin-4 {:label    "Bag of Coins"                       ; copper silver gold jewels bag-of-gold
-             :desc     "Spend 4"
-             :colour   [255 255 0]
-             :coin     4
-             :price    4})
+(def coin-a (make-money 1))
+(def coin-b (make-money 3))
+(def coin-c (make-money 9))
 
-(def move-1 {:label    "Step"                               ; lunge dash run
-             :desc     "Move 1"
-             :colour   [150 150 255]
-             :move     1
-             :price    2})
-(def move-2 {:label    "Lunge"                              ; lunge dash run
-             :desc     "Move 2"
-             :colour   [100 100 255]
-             :move     2
-             :price    4})
-(def move-3 {:label    "Dash"                               ; lunge dash run
-             :desc     "Move 3"
-             :colour   [50 50 255]
-             :move     3
-             :price    8})
 
 (def train  {:label    "Train"                             ; flood, train, hire
              :desc     "Place a new minion"
@@ -48,34 +27,12 @@
 (def gc     {:label    "Cleanse"                             ; or trash any unused from hand on every turn?
              :desc     "Trash ≥0 tokens from your hand"
              :colour   [255 200 50]
-             :price    3})
+             :price    1})
 
 (def gift   {:label    "Chocolate Cake"
              :desc     "Earn a Victory Point When in the Castle"
              :colour   [255 105 180]
-             :price    15})
-
-(def club   {:label    "Club"
-             :desc     "Dmg: 1, Rng: 1"
-             :colour   [255 200 200]
-             :damage   [1]
-             :price    2})
-(def sword  {:label    "Sword"
-             :desc     "Dmg: 2, Rng: 1"
-             :colour   [255 150 150]
-             :damage   [2]
-             :price    4})
-(def bsword {:label    "Big Sword"
-             :desc     "Dmg: 4, Rng: 1"
-             :colour   [255 100 100]
-             :damage   [4]
-             :price    6})
-(def bow    {:label    "Bow"                              ; Damage (3 - Range), Range up to 3
-             :desc     "Dmg: 4-Rng, Rng: ≤3"
-             :colour   [255 75 75]
-             :damage   [3 2 1]
-             :price    8})
-
+             :price    12})
 
 (defn add-desc [{:keys [move damage] :as item}]
   (assoc item :desc
@@ -93,7 +50,7 @@
     (assoc item :colour [r g b])))
 
 (defn add-price [{:keys [move damage] :as item}]
-  (let [total-d (reduce + (map + damage (range)))
+  (let [total-d (reduce + damage)
         d-cost (+ total-d 1)
         m-cost (if move (Math/pow 2 move) 0)]
     (assoc item :price (+ m-cost d-cost))))
@@ -103,39 +60,40 @@
 (def peasant (prepare-item {:label  "Peasant"
                             :move   1}))
 (def knave (prepare-item {:label  "Knave"
-                            :damage [1]}))
+                          :damage [1]}))
 
 (def scout (prepare-item {:label  "Scout"
                           :move 3}))
 
 (def knight (prepare-item {:label  "Knight"
                            :move 3
-                           :damage [5]}))
+                           :damage [4]}))
 
 (def axeman (prepare-item {:label  "Axeman"
                            :move 1
                            :damage [3]}))
 
 (def pikeman (prepare-item {:label  "Pikeman"
-                           :move 2
-                           :damage [1]}))
+                            :move 2
+                            :damage [1]}))
 
 (def swordsman (prepare-item {:label  "Swordsman"
-                           :move 2
-                           :damage [2]}))
+                              :move 2
+                              :damage [2]}))
 
 (def archer (prepare-item {:label  "Archer"
-                           :move 1
+                           :move 2
                            :damage [1 1 1 1]}))
 
 (def longbowman (prepare-item {:label  "Longbowman"
+                               :move 1
                                :damage [3 2 1]}))
 
 
 (defonce app-state (atom {:text "Knights of Swamp Castle"
                           :hand-count 0
                           :hand-size 5
-                          :draw [coin-1 coin-1 coin-1 peasant train]
+                          :draw [coin-a coin-a coin-a peasant train]
                           :hand []
                           :discard []
                           :trash []
@@ -264,9 +222,7 @@
 
      [:h3 "Buy"]
 
-     (buy-button coin-1) (buy-button coin-2) (buy-button coin-4) [:br]
-     ;(buy-button move-1) (buy-button move-2) (buy-button move-3) [:br]
-     ;(buy-button club) (buy-button sword) (buy-button bsword) (buy-button bow) [:br]
+     (buy-button coin-a) (buy-button coin-b) (buy-button coin-c) [:br]
      (buy-button train) (buy-button gc) (buy-button gift) [:br]
      (buy-button peasant) (buy-button knave) (buy-button scout) [:br]
      (buy-button axeman) (buy-button swordsman) (buy-button pikeman) [:br]
