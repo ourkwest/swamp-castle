@@ -4,19 +4,19 @@
 
 (enable-console-print!)
 
-(def iteration 4)
+(def iteration 5)
 
 (def max-coins 10)
-(defn make-money [amount]
+(defn make-money [amount price]
   {:label  (str amount " Coins")
    :desc   (str "Spend " amount)
    :colour [255 255 (int (* 255 (- 1 (/ amount max-coins))))]
    :coin   amount
-   :price  amount})
+   :price  price})
 
-(def coin-a (make-money 1))
-(def coin-b (make-money 3))
-(def coin-c (make-money 9))
+(def coin-a (make-money 1 2))
+(def coin-b (make-money 2 4))
+(def coin-c (make-money 4 8))
 
 
 (def train  {:label    "Train"                             ; flood, train, hire
@@ -90,14 +90,14 @@
                                :damage [3 2 1]}))
 
 
-(defonce app-state (atom {:text "Knights of Swamp Castle"
+(defonce app-state (atom {:text       "Knights of Swamp Castle"
                           :hand-count 0
-                          :hand-size 5
-                          :draw [coin-a coin-a coin-a peasant train]
-                          :hand []
-                          :discard []
-                          :trash []
-                          :log '()}))
+                          :hand-size  5
+                          :draw       (shuffle [coin-a coin-a coin-a peasant train])
+                          :hand       []
+                          :discard    []
+                          :trash      []
+                          :log        '()}))
 
 (defn rgb [[r g b]]
   (str "rgb(" r \, g \, b \)))
@@ -109,13 +109,17 @@
     :else (draw-tokens (dec n) (rest draw) (conj hand (first draw)) discard)))
 
 
-(defn draw-hand [{:keys [hand-size draw hand discard hand-count log] :as state}]
-  (let [[new-draw new-hand new-discard] (draw-tokens hand-size draw [] (concat discard hand))]
-    (assoc state :draw new-draw
-                 :hand new-hand
-                 :discard new-discard
-                 :hand-count (inc hand-count)
-                 :log (conj log (str "Drew: " (string/join ", " (map :label new-hand)))))))
+(defn draw-to-hand
+  ([{:keys [hand-size draw hand discard hand-count log] :as state} draw-type]
+   (let [[n hand' discard' hand-count'] (case draw-type
+                                          :hand [hand-size [] (concat discard hand) (inc hand-count)]
+                                          :token [1 hand discard hand-count])
+         [new-draw new-hand new-discard] (draw-tokens n draw hand' discard')]
+     (assoc state :draw new-draw
+                  :hand new-hand
+                  :discard new-discard
+                  :hand-count hand-count'
+                  :log (conj log (str "Drew: " (string/join ", " (map :label (take-last n new-hand)))))))))
 
 (defn buy [item]
   (swap! app-state update :discard conj item)
@@ -214,16 +218,22 @@
 
      [:input {:type :button
               :value (str "Draw " hand-size)
-              :on-click #(swap! app-state draw-hand)
+              :on-click #(swap! app-state draw-to-hand :hand)
               :style {:color :green
                       :font-size "150%"
+                      :background-color :lightgreen}}]
+     [:input {:type :button
+              :value (str "Draw 1")
+              :on-click #(swap! app-state draw-to-hand :token)
+              :style {:color :green
+                      :font-size "125%"
                       :background-color :lightgreen}}]
 
 
      [:h3 "Buy"]
 
      (buy-button coin-a) (buy-button coin-b) (buy-button coin-c) [:br]
-     (buy-button train) (buy-button gc) (buy-button gift) [:br]
+     (buy-button train) (buy-button gift) [:br]
      (buy-button peasant) (buy-button knave) (buy-button scout) [:br]
      (buy-button axeman) (buy-button swordsman) (buy-button pikeman) [:br]
      (buy-button archer) (buy-button longbowman) (buy-button knight)
