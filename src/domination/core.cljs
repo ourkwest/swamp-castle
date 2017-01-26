@@ -4,7 +4,7 @@
 
 (enable-console-print!)
 
-(def iteration 5)
+(def iteration 6)
 
 (def max-coins 10)
 (defn make-money [amount price]
@@ -32,58 +32,64 @@
 (def gift   {:label    "Chocolate Cake"
              :desc     "Earn a Victory Point When in the Castle"
              :colour   [255 105 180]
-             :price    12})
+             :price    10})
 
-(defn add-desc [{:keys [move damage] :as item}]
+(def shield   {:label    "Blacksmith"
+               :desc     "Take a shield for free"
+               :colour   [0 150 255]
+               :price    8})
+
+(defn add-desc [{:keys [move damage range] :as item}]
   (assoc item :desc
               (string/join " "
                            (remove nil? [(when move (str "M: " move))
-                                         (when damage (str "D: " (string/join "." damage)))]))))
+                                         (when damage (str "D: " damage))
+                                         (when range (str "R: " range))]))))
 
 (defn add-colour [{:keys [move damage] :as item}]
-  (let [total-d (reduce + damage)
-        df (- 1 (/ total-d 10))
-        mf (- 1 (/ move 10))
+  (let [df (- 1 (/ damage 7))
+        mf (- 1 (/ move 7))
         r (int (* 255 mf))
         g (int (* 255 mf df))
         b (int (* 255 df))]
     (assoc item :colour [r g b])))
 
-(defn add-price [{:keys [move damage] :as item}]
-  (let [total-d (reduce + damage)
-        d-cost (+ total-d 1)
-        m-cost (if move (Math/pow 2 move) 0)]
-    (assoc item :price (+ m-cost d-cost))))
+(defn add-price [{:keys [move damage range price] :as item}]
+  (let [r-cost (if range 1 0)
+        cost (- (* 2 (+ move damage r-cost)) (Math/abs (- move damage)))]
+    (assoc item :price (or price cost))))
 
 (def prepare-item (comp add-desc add-colour add-price))
 
 (def peasant (prepare-item {:label  "Peasant"
                             :move   1}))
 (def knave (prepare-item {:label  "Knave"
-                          :damage [1]}))
+                          :damage  1}))
 
 (def scout (prepare-item {:label  "Scout"
-                          :move 3}))
+                          :move 3
+                          :price 5}))
 
 (def knight (prepare-item {:label  "Knight"
-                           :move 3
-                           :damage [4]}))
+                           :move   3
+                           :damage  4}))
 
 (def axeman (prepare-item {:label  "Axeman"
-                           :move 1
-                           :damage [3]}))
+                           :move   1
+                           :damage  3}))
 
 (def pikeman (prepare-item {:label  "Pikeman"
-                            :move 2
-                            :damage [1]}))
+                            :move   2
+                            :damage  1}))
 
 (def swordsman (prepare-item {:label  "Swordsman"
-                              :move 2
-                              :damage [2]}))
+                              :move   2
+                              :damage  2}))
 
 (def archer (prepare-item {:label  "Archer"
-                           :move 2
-                           :damage [1 1 1 1]}))
+                           :move   2
+                           :damage 1
+                           :range 4}))
 
 (def longbowman (prepare-item {:label  "Longbowman"
                                :move 1
@@ -128,6 +134,7 @@
 (defn buy-button [item]
   [:div
    {                                                        ;:on-click #(buy item)
+    :key      (:label item)
     :class    "outlined"
     :style    {:display :inline-block
                :text-align :center
@@ -233,10 +240,15 @@
      [:h3 "Buy"]
 
      (buy-button coin-a) (buy-button coin-b) (buy-button coin-c) [:br]
-     (buy-button train) (buy-button gift) [:br]
-     (buy-button peasant) (buy-button knave) (buy-button scout) [:br]
-     (buy-button axeman) (buy-button swordsman) (buy-button pikeman) [:br]
-     (buy-button archer) (buy-button longbowman) (buy-button knight)
+     (buy-button train) (buy-button shield) (buy-button gift) [:br]
+
+
+     (for [item (sort-by :price [peasant scout axeman swordsman archer knight])]
+       (buy-button item))
+
+     ;(buy-button peasant) (buy-button scout) [:br]
+     ;(buy-button axeman) (buy-button swordsman) [:br]
+     ;(buy-button archer) (buy-button knight)
 
 
      [:div
