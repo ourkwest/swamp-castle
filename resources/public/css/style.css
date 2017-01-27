@@ -5,10 +5,16 @@ html {
 }
 
 
-span {
+.bigpad {
     margin-left: 1em;
     margin-right: 1em;
 }
+
+.smallpad {
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
 
 div {
     margin-top: 1em;
