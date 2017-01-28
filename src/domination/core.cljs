@@ -4,7 +4,7 @@
 
 (enable-console-print!)
 
-(def iteration 7)
+(def iteration 8)
 
 (defn add-syms [{:keys [move damage range coin token] :as item}]
   (assoc item :syms
@@ -59,9 +59,9 @@
 (def gift   {:label    "♟ Chocolate Cake"
              :desc     "Earn a Victory Point When in the Castle"
              :colour   [255 105 180]
-             :price    10})
+             :price    12})
 
-(def shield   {:label    "Blacksmith"
+(def shield   {:label    "♟ Blacksmith"
                :desc     "Take a shield for free"
                :colour   [0 150 255]
                :price    6})
