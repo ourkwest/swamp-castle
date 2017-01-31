@@ -4,35 +4,37 @@
 
 (enable-console-print!)
 
-(def iteration 8)
+(def iteration 9)
 
 (defn add-syms [{:keys [move damage range coin token] :as item}]
-  (assoc item :syms
-              [:span (remove nil? [(when move [:span {:class "smallpad"
-                                                      :key "m"
-                                                      :style {:background-color "rgb(0,255,0)"
-                                                              :border "1px solid black"
-                                                              :border-radius "10px"}} (str "\u00A0" move "\u00A0")])
-                                   (when damage [:span {:class "smallpad"
-                                                        :key "d"
-                                                        :style {:background-color "rgb(255,55,0)"
-                                                                :border "1px solid black"
-                                                                :border-radius "10px"}} (str "\u00A0" damage "\u00A0")])
-                                   (when range [:span {:class "smallpad"
-                                                       :key "r"
-                                                       :style {:background-color "rgb(193, 121, 252)"
-                                                               :border "1px solid black"
-                                                               :border-radius "10px"}} (str "\u00A0" range "\u00A0")])
-                                   (when coin [:span {:class "smallpad"
-                                                      :key "c"
-                                                       :style {:background-color "rgb(255,225,0)"
-                                                               :border "1px solid black"
-                                                               :border-radius "10px"}} (str "\u00A0" coin "\u00A0")])
-                                   (when token [:span {:class "smallpad"
-                                                       :key "t"
-                                                      :style {:background-color "rgb(100,150,250)"
-                                                              :border "1px solid black"
-                                                              :border-radius "10px"}} (str "\u00A0" token "\u00A0")])])]))
+  (let [syms (remove nil? [(when move [:span {:class "smallpad"
+                                               :key   "m"
+                                               :style {:background-color "rgb(0,255,0)"
+                                                       :border           "1px solid black"
+                                                       :border-radius    "10px"}} (str "\u00A0" move "\u00A0")])
+                            (when damage [:span {:class "smallpad"
+                                                 :key   "d"
+                                                 :style {:background-color "rgb(255,55,0)"
+                                                         :border           "1px solid black"
+                                                         :border-radius    "10px"}} (str "\u00A0" damage "\u00A0")])
+                            (when range [:span {:class "smallpad"
+                                                :key   "r"
+                                                :style {:background-color "rgb(193, 121, 252)"
+                                                        :border           "1px solid black"
+                                                        :border-radius    "10px"}} (str "\u00A0" range "\u00A0")])
+                            (when coin [:span {:class "smallpad"
+                                               :key   "c"
+                                               :style {:background-color "rgb(255,225,0)"
+                                                       :border           "1px solid black"
+                                                       :border-radius    "10px"}} (str "\u00A0" coin "\u00A0")])
+                            (when token [:span {:class "smallpad"
+                                                :key   "t"
+                                                :style {:background-color "rgb(100,150,250)"
+                                                        :border           "1px solid black"
+                                                        :border-radius    "10px"}} (str "\u00A0" token "\u00A0")])])]
+    (if (empty? syms)
+      item
+      (assoc item :syms [:span syms]))))
 
 (def max-coins 10)
 (defn make-money [amount price]
@@ -41,7 +43,7 @@
              :coin   amount
              :price  price}))
 
-(def coin-a (make-money 1 2))
+(def coin-a (make-money 1 1))
 (def coin-b (make-money 2 4))
 (def coin-c (make-money 4 8))
 
@@ -67,13 +69,13 @@
                :price    6})
 
 
-(defn add-colour [{:keys [move damage] :as item}]
+(defn add-colour [{:keys [move damage colour] :as item}]
   (let [df (- 1 (/ damage 7))
         mf (- 1 (/ move 7))
         r (int (* 255 mf))
         g (int (* 255 mf df))
         b (int (* 255 df))]
-    (assoc item :colour [r g b])))
+    (assoc item :colour (or colour [150 200 255]))))
 
 (defn add-price [{:keys [move damage range token coin price] :as item}]
   (let [r-cost (if range 1 0)
@@ -81,6 +83,32 @@
     (assoc item :price (or price cost))))
 
 (def prepare-item (comp add-syms add-colour add-price))
+
+(defn character [label move damage coin token range price colour desc]
+  (let [character-label (.replace label " " "-")
+        character-symbol (symbol character-label)]
+    (prepare-item {:label (str "♟ " character-label)
+                   :move move
+                   :damage damage
+                   :token token
+                   :coin coin
+                   :range range
+                   :price price
+                   :colour colour
+                   :desc desc})))
+
+(def characters
+  [
+;                               Move  Dmg.  Coin  Token Range Price Color Description
+   (character "Plough"          1     nil   nil   1     nil   2     nil   nil)
+   (character "Horse"           3     nil   1     nil   nil   3     nil   nil)
+   (character "Dagger"          1     1     1     nil   nil   4     nil   nil)
+   (character "Bow"             2     1     nil   1     4     5     nil   nil)
+   (character "Furnace"         nil   nil   nil   1     nil   6     [255 100 0] " + Take a shield for free")
+   (character "Axe"             1     3     nil   1     nil   7     nil   nil)
+   (character "Sword"           2     2     2     nil   nil   8     nil   nil)
+   (character "Chocolate Cake"  nil   nil   nil   nil   nil   10    [255 50 200] "Sacrifice this token and ♟ in the Castle for a Victory Point.")
+   ])
 
 (def peasant (prepare-item {:label  "♟ Farmer"
                             :move   1
@@ -123,13 +151,13 @@
 
 ;; normally defonce...
 (def app-state (atom {:text       "Knights of Swamp Castle"
-                          :hand-count 0
-                          :hand-size  5
-                          :draw       (shuffle [coin-a coin-a coin-a peasant train])
-                          :hand       []
-                          :discard    []
-                          :trash      []
-                          :log        '()}))
+                      :hand-count 0
+                      :hand-size  4
+                      :draw       (shuffle [coin-a coin-a coin-a coin-a])
+                      :hand       []
+                      :discard    []
+                      :trash      []
+                      :log        '()}))
 
 (defn rgb [[r g b]]
   (str "rgb(" r \, g \, b \)))
@@ -169,14 +197,13 @@
    [:span {:class "bigpad"
            :style {:font-size "150%"}} (:label item)]
    [:br]
-   (when-let [desc (:desc item)]
-     [:span
-      [:span {:style {:font-size "75%"}} desc]
-      [:br]])
    (when-let [syms (:syms item)]
      [:span
-      [:span {:style {:font-size "75%"}} syms]
-      [:br]])
+      [:span {:style {:font-size "75%"}} syms]])
+   (when-let [desc (:desc item)]
+     [:span
+      [:span {:style {:font-size "75%"}} desc]])
+   [:br]
    [:input {:type     :button
             :value    (str "Buy for " (:price item))
             :on-click #(buy item)
@@ -274,11 +301,14 @@
 
      [:h3 "Buy"]
 
+     [:div (str "New minions: " (string/join " | " [1 2 4 6 8]))]
+     [:div (str "Shields: " (string/join " | " [1 1 1 2 2 3 4 5 6 7 8 9 10 11 12 "etc."]))]
+
      (buy-button coin-a) (buy-button coin-b) (buy-button coin-c) [:br]
-     (buy-button train) (buy-button shield) (buy-button gift) [:br]
+     ;(buy-button train) (buy-button shield) (buy-button gift) [:br]
 
 
-     (for [item (sort-by :price [peasant scout axeman swordsman archer knight])]
+     (for [item (sort-by :price characters)]
        (buy-button item))
 
      ;(buy-button peasant) (buy-button scout) [:br]
