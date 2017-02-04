@@ -149,15 +149,26 @@
                                :move 1
                                :damage [3 2 1]}))
 
+(def state-history (atom '()))
+
 ;; normally defonce...
-(def app-state (atom {:text       "Knights of Swamp Castle"
-                      :hand-count 0
-                      :hand-size  4
-                      :draw       (shuffle [coin-a coin-a coin-a coin-a])
-                      :hand       []
-                      :discard    []
-                      :trash      []
-                      :log        '()}))
+(def app-state (add-watch (atom {:text       "Knights of Swamp Castle"
+                                 :hand-count 0
+                                 :hand-size  4
+                                 :draw       (shuffle [coin-a coin-a coin-a coin-a])
+                                 :hand       []
+                                 :discard    []
+                                 :trash      []
+                                 :log        '()})
+                          :history
+                          (fn [_ _ old _]
+                            (swap! state-history conj old))))
+
+(defn undo-state-change []
+  (let [[prev & history] @state-history]
+    (when prev
+      (reset! app-state prev)
+      (reset! state-history history))))
 
 (defn rgb [[r g b]]
   (str "rgb(" r \, g \, b \)))
@@ -165,6 +176,7 @@
 (defn draw-tokens [n draw hand discard]
   (cond
     (zero? n) [draw hand discard]
+    (and (empty? draw) (empty? discard)) [draw hand discard]
     (empty? draw) (draw-tokens n (shuffle discard) hand [])
     :else (draw-tokens (dec n) (rest draw) (conj hand (first draw)) discard)))
 
@@ -182,8 +194,9 @@
                   :log (conj log (str "Drew: " (string/join ", " (map :label (take-last n new-hand)))))))))
 
 (defn buy [item]
-  (swap! app-state update :discard conj item)
-  (swap! app-state update :log conj (str "Bought " (:label item))))
+  (swap! app-state #(-> %
+                        (update :discard conj item)
+                        (update :log conj (str "Bought " (:label item))))))
 
 (defn buy-button [item]
   [:div
@@ -226,14 +239,6 @@
 
 (defn sum-categories [m {:keys [category value]}]
   (update m category (fnil + 0) value))
-
-(defn append-str
-  ([] nil)
-  ([string] string)
-  ([string x]
-   (if string
-     (str string ", " x)
-     x)))
 
 (defn hello-world []
 
@@ -320,6 +325,10 @@
       {:style {:font-size "50%"}}
       (for [[id msg] (map-indexed vector log)]
         [:span {:key (str "log-" id)} msg [:br]])]
+
+     [:input {:type :button
+              :value "Undo"
+              :on-click undo-state-change}]
 
      ]))
 
