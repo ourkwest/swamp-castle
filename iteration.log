@@ -128,3 +128,25 @@ Suggestions:
         no one bought 'Dagger' or 'Sword'
         it was suggested that every character token allow you to draw another token
             you are limited by minions anyway, so the 'runaway chaining turn' problem is limited.
+
+10. TODO: change log from diff
+    rewrote most character tokens
+        All character tokens grant +1 token now
+    completely redrew map
+        linear race from start to finish
+        large midden centre-start
+            one player was able to mostly control the midden
+        walls near end
+        sporadic trees (+1 shield against every attack)
+            possibly too powerful (makes minion immune from archers and brigands)
+            or maybe that's good?
+    two player game against a real person
+    gave up at first VP after half an hour on hand #21
+    much more fun (commented on by other player)
+    every token bought at least once
+    money available per hand progressed more smoothly upwards
+        no massive hump to overcome at 7 coins!
+    suggestion:
+        playing midden should prevent minion from doing something else
+        character token that grants extra shields to a minion while others take their turns...?
+            a bit complex
