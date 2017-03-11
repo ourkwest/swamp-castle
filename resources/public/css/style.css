@@ -6,34 +6,105 @@ html,body {
 }
 
 
-.bigpad {
-    margin-left: 1em;
-    margin-right: 1em;
+/***************************/
+
+
+div.token {
+//    z-index: 2;
+    display: inline-block;
+    border-radius: 50%;
+    animation: fadeIn 1s;
+    background-color: rgb(100,100,100);
 }
 
-.smallpad {
-    margin-left: 2px;
-    margin-right: 2px;
+div.token:hover {
+    background-color: rgb(200,200,200);
 }
 
-div#app {
-    margin: 0px;
+.tokensvg {
+    z-index: 2;
+    width: 100px;
+    height: 100px;
 }
 
-div#board, div#card {
-    margin: 0px;
+.tokentrash {
+    fill: rgb(100,0,0);
+    stroke: black;
 }
 
-div {
-    margin-top: 1em;
-    margin-bottom: 1em;
+.tokentrash:hover {
+    fill: red;
+    stroke: black;
 }
 
-.outlined {
-    padding: 2px;
-    margin: 4px;
+div.trash {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 50px;
+}
+div.trash .tokensvg {
+    width: 50px;
+    height: 50px;
+}
+
+//.tokencircle {
+//    stroke: black;
+//    stroke-width: 1;
+//    fill: none;
+//}
+
+.section {
+    height: 100px;
+    border: 5px solid rgb(150,150,150);
+    border-radius: 5px;
+    //padding: 0px;
+    position:relative;
+    margin: 5px;
+}
+
+.sectionback {
+    position:absolute;
+    background-color: rgb(150,150,150);
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+}
+
+.sectionlabel {
+    width: 100%;
+    text-align: center;
+    position:absolute;
+    color: rgb(115,115,115);
+    z-index: -1;
+    font-size: 80px;
+}
+
+.drawbutton {
+    color: green;
+    font-size: 125%;
+    background-color: lightgreen;
     border: 1px solid black;
     border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+    margin-bottom: 0px;
+}
+
+.drawbutton:hover {
+    color: lightgreen;
+    background-color: darkgreen;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: rotate(45deg) scale(0.1);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+    }
 }
 
 .h-spaced {
@@ -41,13 +112,51 @@ div {
     margin-right: 1em;
 }
 
-input {
-    border-radius: 5px;
-}
+/***************************/
 
-.available {
-    font-weight: bold;
-}
+//.bigpad {
+//    margin-left: 1em;
+//    margin-right: 1em;
+//}
+//
+//.smallpad {
+//    margin-left: 2px;
+//    margin-right: 2px;
+//}
+//
+//div#app {
+//    margin: 0px;
+//}
+//
+//div#board, div#card {
+//    margin: 0px;
+//}
+//
+//div {
+//    margin-top: 1em;
+//    margin-bottom: 1em;
+//}
+//
+//.outlined {
+//    padding: 2px;
+//    margin: 4px;
+//    border: 1px solid black;
+//    border-radius: 5px;
+//}
+//
+//.h-spaced {
+//    margin-left: 1em;
+//    margin-right: 1em;
+//}
+//
+//input {
+//    border-radius: 5px;
+//}
+//
+//.available {
+//    font-weight: bold;
+//}
+
 
 
 @media print {

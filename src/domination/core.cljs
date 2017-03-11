@@ -1,39 +1,133 @@
 (ns domination.core
   (:require [reagent.core :as reagent :refer [atom]]
             [clojure.string :as string]
+            [goog.dom :as dom]
+            [goog.events :as events]
             [domination.board :as board]
             [domination.card :as card]))
 
 (enable-console-print!)
 
-(def iteration 10)
+(def iteration 11)
+
+(defn rgb [[r g b]]
+  (str "rgb(" r \, g \, b \)))
+
+(defn badge [colour number x y]
+  [:g
+   [:circle {:style {:stroke "rgba(0,0,0,0.25)"
+                        :fill   (rgb colour)}
+                :cx    x
+                :cy    y
+                :r     14}]
+   [:text {:x           x
+           :y           (+ y 10)
+           :fill        "black"
+           :font-size   "28"
+           :text-anchor "middle"}
+    (str number)]])
+
+(defn render-item [{:keys [move damage range coin shield label colour money?] :as item}]
+
+  [:svg {:class "tokensvg"
+         :view-box (string/join " " [0 0 100 100])}
+
+   [:circle {:style {:stroke "black"
+                     :fill (rgb colour)}
+             :cx 50
+             :cy 50
+             :r 49}]
+
+   (cond
+     money?
+     [:g
+      [:circle {:style {:stroke "rgba(0,0,0,0.25)"
+                        :fill (rgb colour)}
+                :cx 50
+                :cy 50
+                :r 40}]
+      [:text {:x           50
+              :y           (+ 50 30)
+              :stroke "rgba(0,0,0,0.25)"
+              :fill "black"
+              :font-size   "85"
+              :text-anchor "middle"}
+       coin]]
+     (= label "Chocolate Cake")
+     [:g                                                    ;cake
+      [:circle {:style {:stroke "rgba(0,0,0,0.25)"
+                        :fill "none"}
+                :cx 50
+                :cy 50
+                :r 47}]
+      [:text {:x           50
+              :y           (+ 50 23)
+              :fill      "rgba(0,0,0,0.25)"
+              ;:fill        "none"
+              :font-size   "85"
+              :text-anchor "middle"} "♟"]
+      [:image {:x         (- 50 25)
+               :y         (- 50 50)
+               :height    "48"
+               :width     "48"
+               :xlinkHref "images/cake.png"}]
+      [:text {:x           50
+              :y           (+ 50 6)
+              :fill        "black"
+              :font-size   "18"
+              :text-anchor "middle"} "Chocolate"]
+      [:text {:x           50
+              :y           (+ 50 30)
+              :fill        "black"
+              :font-size   "18"
+              :text-anchor "middle"} "Cake"]]
+     :else
+     [:g
+      [:circle {:style {:stroke "rgba(0,0,0,0.25)"
+                        :fill "none"}
+                :cx 50
+                :cy 50
+                :r 47}]
+      [:text {:x           50
+              :y           (+ 50 23)
+              :fill      "rgba(0,0,0,0.25)"
+              ;:fill        "none"
+              :font-size   "85"
+              :text-anchor "middle"} "♟"]
+      [:text {:x           50
+              :y           (+ 50 6)
+              :fill        "black"
+              :font-size   "16"
+              :text-anchor "middle"} label]
+      (let [badge-v 23 badge-h 17]
+        [:g
+         (when move (badge [0 255 0] move (if coin (- 50 badge-h) 50) (- 50 badge-v)))
+         (when coin (badge [255 255 0] coin (if move (+ 50 badge-h) 50) (- 50 badge-v)))
+         (when damage (badge [255 55 0] damage (if range (- 50 badge-h) 50) (+ 50 badge-v)))
+         (when range  (badge [255 125 50] range (if damage (+ 50 badge-h) 50) (+ 50 badge-v)))
+         (when shield (badge [50 200 255] shield 50 (+ 50 badge-v)))])])])
 
 (defn add-syms [{:keys [move damage range coin shield] :as item}]
-  (let [syms (remove nil? [(when move [:span {:class "smallpad"
+  (let [syms (remove nil? [(when move [:span {:class "badge"
                                                :key   "m"
-                                               :style {:background-color "rgb(0,255,0)"
-                                                       :border           "1px solid black"
-                                                       :border-radius    "10px"}} (str "\u00A0" move "\u00A0")])
-                            (when damage [:span {:class "smallpad"
+                                               :style {:background-color "rgb(0,255,0)"}}
+                                       [:span {:class "badgecontent"} (str move)]])
+                            (when damage [:span {:class "badge"
                                                  :key   "d"
-                                                 :style {:background-color "rgb(255,55,0)"
-                                                         :border           "1px solid black"
-                                                         :border-radius    "10px"}} (str "\u00A0" damage "\u00A0")])
-                            (when range [:span {:class "smallpad"
+                                                 :style {:background-color "rgb(255,55,0)"}}
+                                          [:span {:class "badgecontent"} (str damage)]])
+                            (when range [:span {:class "badge"
                                                 :key   "r"
-                                                :style {:background-color "rgb(255, 125, 0)"
-                                                        :border           "1px solid black"
-                                                        :border-radius    "10px"}} (str "\u00A0" range "\u00A0")])
-                            (when coin [:span {:class "smallpad"
+                                                :style {:background-color "rgb(255, 125, 0)"}}
+                                         [:span {:class "badgecontent"} (str range)]])
+                            (when coin [:span {:class "badge"
                                                :key   "c"
-                                               :style {:background-color "rgb(255,225,0)"
-                                                       :border           "1px solid black"
-                                                       :border-radius    "10px"}} (str "\u00A0" coin "\u00A0")])
-                            (when shield [:span {:class "smallpad"
+                                               :style {:background-color "rgb(255,225,0)"}}
+                                        [:span {:class "badgecontent"} (str coin)]])
+                            (when shield [:span {:class "badge"
                                                 :key   "t"
-                                                :style {:background-color "rgb(0,200,250)"
-                                                        :border           "1px solid black"
-                                                        :border-radius    "10px"}} (str "\u00A0" shield "\u00A0")])])]
+                                                :style {:background-color "rgb(0,200,250)"}}
+                                          [:span {:class "badgecontent"} (str shield)]])])]
     (if (empty? syms)
       item
       (assoc item :syms [:span syms]))))
@@ -43,6 +137,7 @@
   (add-syms {:label  (if (= 1 amount) "1 Coin" (str amount " Coins"))
              :colour [255 255 (int (* 255 (- 1 (/ amount max-coins))))]
              :coin   amount
+             :money? true
              :price  price}))
 
 (def coin-a (make-money 1 0))
@@ -66,8 +161,9 @@
 
 (defn character [label move damage coin shield range price colour desc]
   (let [character-label (.replace label " " "-")
-        character-symbol (symbol character-label)]
-    (prepare-item {:label (str "♟ " character-label)
+        ;character-symbol (symbol character-label)
+        ]
+    (prepare-item {:label label                             ;character-label
                    :move move
                    :damage damage
                    :shield shield
@@ -103,21 +199,23 @@
 (defn uniqueness []
   [(int (rand 255)) (int (rand 255)) (int (rand 255))])
 
-(def state-history (atom '()))
+(defonce state-history (atom '()))
 
-;; normally defonce...
-(def app-state (add-watch (atom {:text       "Knights of Swamp Castle"
-                                 :uniqueness (uniqueness)
-                                 :hand-count 0
-                                 :hand-size  4
-                                 :draw       (shuffle [coin-a coin-a coin-a coin-a])
-                                 :hand       []
-                                 :discard    []
-                                 :trash      []
-                                 :log        '()})
-                          :history
-                          (fn [_ _ old _]
-                            (swap! state-history conj old))))
+;; normally defonce... - do this properly!!!
+(defonce app-state (add-watch (atom {:text       "Knights of Swamp Castle"
+                                     :uniqueness (uniqueness)
+                                     :colour     "rgb(175,175,175)"
+                                     :hand-count 0
+                                     :hand-size  4
+                                     :draw       (shuffle [coin-a coin-a coin-a coin-a])
+                                     :hand       []
+                                     :played     []
+                                     :discard    []
+                                     :trashed    []
+                                     :log        '()})
+                              :history
+                              (fn [_ _ old _]
+                                (swap! state-history conj old))))
 
 (defn undo-state-change []
   (let [[prev & history] @state-history]
@@ -125,8 +223,7 @@
       (reset! app-state prev)
       (reset! state-history history))))
 
-(defn rgb [[r g b]]
-  (str "rgb(" r \, g \, b \)))
+
 
 (defn draw-tokens [n draw hand discard]
   (cond
@@ -135,15 +232,15 @@
     (empty? draw) (draw-tokens n (shuffle discard) hand [])
     :else (draw-tokens (dec n) (rest draw) (conj hand (first draw)) discard)))
 
-
 (defn draw-to-hand
-  ([{:keys [hand-size draw hand discard hand-count log] :as state} draw-type]
-   (let [[n hand' discard' hand-count'] (case draw-type
-                                          :hand [hand-size [] (concat discard hand) (inc hand-count)]
-                                          :token [1 hand discard hand-count])
+  ([{:keys [hand-size draw hand played discard hand-count log] :as state} draw-type]
+   (let [[n hand' played' discard' hand-count'] (case draw-type
+                                          :hand [hand-size [] [] (concat discard played hand) (inc hand-count)]
+                                          :token [1 hand played discard hand-count])
          [new-draw new-hand new-discard] (draw-tokens n draw hand' discard')]
      (assoc state :draw new-draw
-                  :hand new-hand
+                  :hand (vec (remove :money? new-hand))
+                  :played (vec (concat played' (filter :money? new-hand)))
                   :discard new-discard
                   :hand-count hand-count'
                   :log (conj log (str "Drew: " (string/join ", " (map :label (take-last n new-hand)))))))))
@@ -177,101 +274,150 @@
             :on-click #(buy item)
             :style    {:background-color (rgb (:colour item))}}]])
 
-(defn trash-from-hand [{:keys [hand trash log] :as state} item]
-  (let [like-item (filter #(= % item) hand)
-        not-item (remove #(= % item) hand)]
-    (assoc state :trash (vec (conj trash item))
-                 :hand (vec (sort-by (juxt :category :value)
-                                     (concat not-item (rest like-item))))
-                 :log (conj log (str "Trashed: " (:label item))))))
+;(defn trash-from-hand [{:keys [hand trash log] :as state} item]
+;  (let [like-item (filter #(= % item) hand)
+;        not-item (remove #(= % item) hand)]
+;    (assoc state :trash (vec (conj trash item))
+;                 :hand (vec (sort-by (juxt :category :value)
+;                                     (concat not-item (rest like-item))))
+;                 :log (conj log (str "Trashed: " (:label item))))))
 
-(defn untrash-to-hand [{:keys [hand trash log] :as state} item]
-  (let [like-item (filter #(= % item) trash)
-        not-item (remove #(= % item) trash)]
-    (assoc state :hand (vec (sort-by (juxt :category :value) (conj hand item)))
-                 :trash (vec (concat not-item (rest like-item)))
-                 :log (conj log (str "Un-trashed: " (:label item))))))
+(defn play [{:keys [hand played log] :as state} hand-index]
+  (-> state
+      (assoc :played (vec (conj played (nth hand hand-index)))
+             :hand (vec (concat (take hand-index hand) (drop (inc hand-index) hand)))
+             :log (conj log (str "Played: " (:label (nth hand hand-index)))))
+      (draw-to-hand :token)))
+
+(defn trash-from-hand [{:keys [hand trashed log] :as state} hand-index]
+  (assoc state :trashed (vec (conj trashed (nth hand hand-index)))
+               :hand (vec (concat (take hand-index hand) (drop (inc hand-index) hand)))
+               :log (conj log (str "Trashed: " (:label (nth hand hand-index))))))
+
+(defn trash-from-played [{:keys [played trashed log] :as state} played-index]
+  (assoc state :trashed (vec (conj trashed (nth played played-index)))
+               :played (vec (concat (take played-index played) (drop (inc played-index) played)))
+               :log (conj log (str "Trashed: " (:label (nth played played-index))))))
+
+;(defn untrash-to-hand [{:keys [hand trash log] :as state} item]
+;  (let [like-item (filter #(= % item) trash)
+;        not-item (remove #(= % item) trash)]
+;    (assoc state :hand (vec (sort-by (juxt :category :value) (conj hand item)))
+;                 :trash (vec (concat not-item (rest like-item)))
+;                 :log (conj log (str "Un-trashed: " (:label item))))))
 
 (defn sum-categories [m {:keys [category value]}]
   (update m category (fnil + 0) value))
 
 (defn hello-world []
 
-  (let [{:keys [text uniqueness hand-size draw hand discard hand-count trash log]} @app-state]
+  (let [{:keys [text colour uniqueness hand-size draw hand played discard hand-count trashed trash-mode log]} @app-state]
 
     [:div
 
-     {:style {:border (str "3px solid " (rgb uniqueness))
-              :border-top-width "20px"
-              :padding "10px"
-              :margin "0px"}}
-
-     [:h3 {:style {:margin-top 0}} (str text " (" iteration ") ")]
-     ;[:div {:style {:background-color (rgb uniqueness)
-     ;               :text-align :center}} "\u00A0"]
+     {:id "mounteddiv"
+      ;:on-key-down (fn [e]
+      ;               (println "key press" (.-charCode e))
+      ;               (if (= 13 (.-charCode e))
+      ;                 (println "ENTER")
+      ;                 (println "NOT ENTER")))
+      :tabIndex 1
+      :style {;:border (str "3px solid " colour)
+              ;:border-top (str "20px solid " colour)
+              :padding "0px"
+              :margin  "0px"}}
 
      [:div
-      [:span {:class "h-spaced"} (str " Draw pile: " (count draw))]
+      {:style {:background-color colour}}
+      (str text " (Iteration " iteration ") ")
+      [:input
+       {:type "text" :placeholder "Enter your name..."}]
+      [:select {:defaultValue "rgb(175,175,175)"
+                :on-change    #(swap! app-state assoc :colour (.-value (.-target %)))}
+       [:option {:value "rgb(175,175,175)" :disabled true} "Pick a colour"]
+       [:option {:value "rgb(255,0,0)"} "red"]
+       [:option {:value "rgb(255,255,0)"} "yellow"]
+       [:option {:value "rgb(0,255,0)"} "green"]
+       [:option {:value "rgb(100,120,255)"} "blue"]
+       [:option {:value "rgb(200,200,200)"} "white"]
+       [:option {:value "rgb(50,50,50)"} "black"]]]
+
+
+     [:div
+     [:input {:type :button
+              :class "drawbutton"
+              :value "Draw Hand"
+              :on-click #(swap! app-state draw-to-hand :hand)}]
+     ;"\u00A0"
+     ;[:input {:type :button
+     ;         :value (str "Draw 1")
+     ;         :on-click #(swap! app-state draw-to-hand :token)
+     ;         :style {:color :green
+     ;                 :font-size "125%"
+     ;                 :background-color :lightgreen}}]
+
+
       [:span {:class "h-spaced"} (str " Hand #: " hand-count)]
+      [:span {:class "h-spaced"} (str " Draw pile: " (count draw))]
       [:span {:class "h-spaced"} (str " Discard pile: " (count discard))]
-      [:span {:class "h-spaced"} (str " Total deck: " (+ (count discard) (count hand) (count draw)))]
+      [:span {:class "h-spaced"} (str " Total deck: " (+ (count discard) (count hand) (count draw)))]]
+
+     [:div {:class "section"}
+      [:div {:class "sectionback"}]
+      [:div {:class "sectionlabel"}
+       "Hand"]
+      (for [[index item] (map-indexed vector hand)]
+        [:div (merge {:class    "token"
+                      :key      (str "token-" hand-count "-" index)
+                      :style    {:cursor "pointer"}
+                      :on-click #(swap! app-state play index)}
+                     (when trash-mode
+                       {:on-click #(swap! app-state trash-from-hand index)
+                        :style    {:cursor "crosshair"}}))
+         (render-item item)])
+
       ]
+     [:div {:class "section"}
+      [:div {:class "sectionback"}]
+      [:div {:class "sectionlabel"}
+       "Played"]
+      (for [[index item] (map-indexed vector played)]
+        [:div (merge {:class "token"
+                      :key   (str "token-" hand-count "-" index)
+                      :style {:cursor "default"}}
+                     (when trash-mode
+                       {:on-click #(swap! app-state trash-from-played index)
+                        :style    {:cursor "crosshair"}}))
+         (render-item item)])]
 
-     [:div {:class "outlined"
-            :style {:display "inline-block"}}
-      "Hand"
-      [:div
-       (for [[index item] (map-indexed vector (sort-by (juxt :category :value) hand))]
-         [:span {:class "outlined h-spaced"
-                 :key   (str "token-" index)
-                 :style {:background-color (rgb (:colour item))}
-                 :on-click #(swap! app-state trash-from-hand item)}
-           (:label item) [:span {:style {:font-size "75%"}} (:syms item)]])]
-
-      ;(let [totals (reduce sum-categories {} hand)]
-      ;  [:div {:class "available"}
-      ;   [:span {:class "h-spaced"} (str "Spend: " (transduce (map :coin) + hand))]
-      ;   ;[:span {:class "h-spaced"} (str "Movement: " (transduce (comp (map :move) (remove nil?)) append-str hand))]
-      ;   ;[:span {:class "h-spaced"} (str "Summon: " (transduce (map :move) + hand))]
-      ;   ;[:span {:class "h-spaced"} (str "Weapons: "
-      ;   ;                                (transduce (comp (filter :damage) (map :label)) append-str hand)
-      ;   ;                                ;(frequencies
-      ;   ;                                ;              (map :label (filter #(= :weapon (:category %)) hand)))
-      ;   ;                                )]
-      ;   ])
-      ]
-     [:div {:class "outlined"
-            :style {:display "inline-block"}}
-      "Trash"
-      [:div
-       (for [[index item] (map-indexed vector (sort-by (juxt :category :value) trash))]
-         [:span {:key      (str "token-" index)
-                 :class    "outlined"
-                 :style    {:background-color (rgb (:colour item))}
-                 :on-click #(swap! app-state untrash-to-hand item)}
-          (:label item)])]]
-
-     [:br]
-
-     [:input {:type :button
-              :value (str "Draw " hand-size)
-              :on-click #(swap! app-state draw-to-hand :hand)
-              :style {:color :green
-                      :font-size "150%"
-                      :background-color :lightgreen}}]
-     "\u00A0"
-     [:input {:type :button
-              :value (str "Draw 1")
-              :on-click #(swap! app-state draw-to-hand :token)
-              :style {:color :green
-                      :font-size "125%"
-                      :background-color :lightgreen}}]
+     (when trash-mode
+       [:div {:class "trash"}
+        [:span "Trash"]
+        (for [[index item] (map-indexed vector trashed)]
+          [:div {:class "token"
+                 :key   (str "token-" index)}
+           (render-item item)])])
 
 
-     [:h3 "Buy"]
 
-     [:div (str "New minions (per player): " (string/join " | " [1 2 4 6 8]))]
-     [:div (str "Shields (global): " (string/join " | " [1 1 1 2 2 3 4 5 6 7 8 9 10 11 12 "etc."]))]
+     ;[:br]
+
+     ;[:input {:type :button
+     ;         :value (str "Draw " hand-size)
+     ;         :on-click #(swap! app-state draw-to-hand :hand)
+     ;         :style {:color :green
+     ;                 :font-size "150%"
+     ;                 :background-color :lightgreen}}]
+     ;"\u00A0"
+     ;[:input {:type :button
+     ;         :value (str "Draw 1")
+     ;         :on-click #(swap! app-state draw-to-hand :token)
+     ;         :style {:color :green
+     ;                 :font-size "125%"
+     ;                 :background-color :lightgreen}}]
+
+
+     [:div {:style {:background-color colour}} (str "Buy " (reduce + (remove nil? (map :coin played))))]
 
      [:span "Money Tokens:"] [:br]
      (buy-button coin-a) (buy-button coin-b) (buy-button coin-c) [:br]
@@ -298,13 +444,24 @@
      ]))
 
 (when-let [element (. js/document (getElementById "app"))]
-  (reagent/render-component [hello-world] element))
+  (reagent/render-component [hello-world] element)
+  (println (dom/getElement "mounteddiv"))
+  (events/listen (dom/getElement "mounteddiv") (.-KEYDOWN events/EventType)
+                 (fn [e]
+                   ;(println (.-keyCode e))
+                   (when (= 18 (.-keyCode e))
+                     (swap! app-state assoc :trash-mode true))))
+  (events/listen (dom/getElement "mounteddiv") (.-KEYUP events/EventType)
+                 (fn [e]
+                   (when (= 18 (.-keyCode e))
+                     (swap! app-state assoc :trash-mode false)))))
 
 (when-let [element (. js/document (getElementById "board"))]
   (reagent/render-component [board/render-board] element))
 
 (when-let [element (. js/document (getElementById "card"))]
   (reagent/render-component [card/render-card] element))
+
 
 (defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on
