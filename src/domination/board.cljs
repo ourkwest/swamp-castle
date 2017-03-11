@@ -12,6 +12,14 @@
                            ","
                            (+ (* r (Math/cos theta)) y-off))))))
 
+(defn tri-points
+  ([r] (tri-points r 0 0))
+  ([r x-off y-off]
+   (string/join " " (for [theta (range 0 (* 2 Math/PI) (/ (* 2 Math/PI) 3))]
+                      (str (+ x-off (* r (Math/sin theta)))
+                           ","
+                           (- y-off (* r (Math/cos theta))))))))
+
 
 (def width 210)
 (def height 297)
@@ -89,9 +97,11 @@
 (defn randomise [[x y] r]
   [(+ x (rand r) (- (/ r 2))) (+ y (rand r) (- (/ r 2)))])
 
-(defn bezier-path [[x1 y1] [x2 y2] [x3 y3] [x4 y4]]
-  (str "M" (int x1) \, (int y1) " C" (int x2) \, (int y2)
-       " " (int x3) \, (int y3) " " (int x4) \, (int y4)))
+(defn bezier-path [init-char [x1 y1] [x2 y2] [x3 y3] [x4 y4]]
+  (str init-char (int x1) \, (int y1)
+       " C" (int x2) \, (int y2)
+       " " (int x3) \, (int y3)
+       " " (int x4) \, (int y4)))
 
 (defn vect [[xa ya] [xb yb]]
   [(- xb xa) (- yb ya)])
@@ -141,7 +151,7 @@
                  :fill           :none
                  :stroke-linecap "round"
                  ;:filter "url(#Blur)"
-                 :d              (bezier-path p0 p1 p2 p3)}]
+                 :d              (bezier-path "M" p0 p1 p2 p3)}]
 
          ;(for [n (range 0 1 0.1)]
          ;
@@ -179,6 +189,15 @@
              :style {:fill (rgb [150 100 50])}
              :filter "url(#Blur)"}]
 
+   (for [[xpp ypp] (map xy-pos
+                        [x (inc x) (dec x) x       (inc x)       x (inc x)]
+                        [y       y       y (inc y) (inc y) (dec y) (dec y)])]
+     [:circle {:cx     xpp
+               :cy     ypp
+               :r      (* x-step 0.4)
+               :style  {:fill (rgb [150 100 50])}
+               :filter "url(#Blur2)"}])
+
    (for [theta (range 1000)]
 
      (let [n (rand)]
@@ -189,34 +208,43 @@
 
      )
 
-   (let [[xp yp] (xy-pos x y)]
-     [:use {:x         xp
-            :y         yp
-            :xlinkHref "#Hex2"}])
-   (let [[xp yp] (xy-pos (inc x) y)]
-     [:use {:x         xp
-            :y         yp
-            :xlinkHref "#Hex2"}])
-   (let [[xp yp] (xy-pos (dec x) y)]
-     [:use {:x         xp
-            :y         yp
-            :xlinkHref "#Hex2"}])
-   (let [[xp yp] (xy-pos x (dec y))]
-     [:use {:x         xp
-            :y         yp
-            :xlinkHref "#Hex2"}])
-   (let [[xp yp] (xy-pos x (dec y))]
-     [:use {:x         xp
-            :y         yp
-            :xlinkHref "#Hex2"}])
-   (let [[xp yp] (xy-pos x (inc y))]
-     [:use {:x         xp
-            :y         yp
-            :xlinkHref "#Hex2"}])
-   (let [[xp yp] (xy-pos x (inc y))]
-     [:use {:x         xp
-            :y         yp
-            :xlinkHref "#Hex2"}])]))
+   [:text {:x           xp
+           :y           (+ yp 3)
+           :fill        "white"
+           :font-size   "10"
+           :text-anchor "middle"
+           }
+    "Midden"]
+   ;
+   ;(let [[xp yp] (xy-pos x y)]
+   ;  [:use {:x         xp
+   ;         :y         yp
+   ;         :xlinkHref "#Hex2"}])
+   ;(let [[xp yp] (xy-pos (inc x) y)]
+   ;  [:use {:x         xp
+   ;         :y         yp
+   ;         :xlinkHref "#Hex2"}])
+   ;(let [[xp yp] (xy-pos (dec x) y)]
+   ;  [:use {:x         xp
+   ;         :y         yp
+   ;         :xlinkHref "#Hex2"}])
+   ;(let [[xp yp] (xy-pos x (dec y))]
+   ;  [:use {:x         xp
+   ;         :y         yp
+   ;         :xlinkHref "#Hex2"}])
+   ;(let [[xp yp] (xy-pos x (dec y))]
+   ;  [:use {:x         xp
+   ;         :y         yp
+   ;         :xlinkHref "#Hex2"}])
+   ;(let [[xp yp] (xy-pos x (inc y))]
+   ;  [:use {:x         xp
+   ;         :y         yp
+   ;         :xlinkHref "#Hex2"}])
+   ;(let [[xp yp] (xy-pos x (inc y))]
+   ;  [:use {:x         xp
+   ;         :y         yp
+   ;         :xlinkHref "#Hex2"}])
+   ]))
 
 (defn branch [x y theta size q limit]
 
@@ -254,35 +282,81 @@
 
 (defn bridge [x y theta]
   (let [[xp yp] (xy-pos x y)]
-    [:g
-     ;{:transform (str "rotate(" theta "," xp "," yp ")")}
 
-     [:line {:x1           (+ xp (* (Math/sin theta) x-step 0.4))
-             :y1           (+ yp (* (Math/cos theta) x-step 0.4))
-             :x2           (+ xp (* (Math/sin theta) x-step -0.4))
-             :y2           (+ yp (* (Math/cos theta) x-step -0.4))
-             :stroke-width (/ x-step 2)
-             :stroke       (rgb [100 100 100])}]
-     [:line {:x1           (+ xp (* (Math/sin theta) x-step 0.4))
-             :y1           (+ yp (* (Math/cos theta) x-step 0.4))
-             :x2           (+ xp (* (Math/sin theta) x-step -0.4))
-             :y2           (+ yp (* (Math/cos theta) x-step -0.4))
-             :stroke-width (/ x-step 3)
-             :stroke       "white"
-             ;:filter "url(#Blur2)"
-             }]
+    ;[:line {:x1           (+ xp (* (Math/sin theta) x-step 0.4))
+    ;        :y1           (+ yp (* (Math/cos theta) x-step 0.4))
+    ;        :x2           (+ xp (* (Math/sin theta) x-step -0.4))
+    ;        :y2           (+ yp (* (Math/cos theta) x-step -0.4))
+    ;        :stroke-width (/ x-step 2)
+    ;        :stroke       (rgb [100 100 100])}]
+    ;[:line {:x1           (+ xp (* (Math/sin theta) x-step 0.4))
+    ;        :y1           (+ yp (* (Math/cos theta) x-step 0.4))
+    ;        :x2           (+ xp (* (Math/sin theta) x-step -0.4))
+    ;        :y2           (+ yp (* (Math/cos theta) x-step -0.4))
+    ;        :stroke-width (/ x-step 3)
+    ;        :stroke       "white"
+    ;        ;:filter "url(#Blur2)"
+    ;        }]
 
+    (let [xpp (+ xp 0.5)                                    ;; but why?!?!?!?
+          ypp (+ yp 0.5)
 
-     ]))
+          p1 [(+ xpp (/ x-step 2.5)) (+ ypp (/ x-step 3))]
+          p2 [(+ xpp (/ x-step 4.5)) (+ ypp (/ x-step 4))]
+          p3 [(+ xpp (/ x-step 4.5)) (- ypp (/ x-step 4))]
+          p4 [(+ xpp (/ x-step 2.5)) (- ypp (/ x-step 3))]
+          p5 [(- xpp (/ x-step 2.5)) (+ ypp (/ x-step 3))]
+          p6 [(- xpp (/ x-step 4.5)) (+ ypp (/ x-step 4))]
+          p7 [(- xpp (/ x-step 4.5)) (- ypp (/ x-step 4))]
+          p8 [(- xpp (/ x-step 2.5)) (- ypp (/ x-step 3))]]
+      [:g
+       {:transform (str "rotate(" theta "," xp "," yp ")")}
+
+       ;[:circle {:cx           (- xpp x-step) :cy ypp :r 3
+       ;          :stroke-width 0.1
+       ;          :stroke       "red" :fill "none"}]
+
+       [:path {:d (str (bezier-path "M" p1 p2 p3 p4)
+                       " "
+                       (bezier-path "L" p8 p7 p6 p5)
+                       " Z")
+               :fill   "white"}]
+
+       [:path {:d      (bezier-path "M" p1 p2 p3 p4)
+               :stroke       (rgb [100 100 100])
+               :stroke-width 1
+               :fill "none"}]
+       [:path {:d      (bezier-path "M" p1 p2 p3 p4)
+               :stroke (rgb [150 150 150])
+               :stroke-width 0.6
+               :stroke-dasharray "2,0.2"
+               :fill "none"}]
+
+       [:path {:d      (bezier-path "M" p5 p6 p7 p8)
+               :stroke       (rgb [100 100 100])
+               :stroke-width 1
+               :fill "none"}]
+       [:path {:d      (bezier-path "M" p5 p6 p7 p8)
+               :stroke (rgb [150 150 150])
+               :stroke-width 0.6
+               :stroke-dasharray "2,0.2"
+               :fill "none"}]
+
+       ])
+
+    ))
 
 (defn render-board []
 
   [:h1 "BOARD?"]
 
-  [:svg {:style    {
-                    :width  "30%"
+  [:svg {:id "section-to-print"
+         :style    {
+                    :width  "100%"
                     ;:height "100%"
-                    :border "1px solid black"}
+
+                    ;:border "1px solid black"
+                    }
          :view-box (string/join " " [0 0 width height])}
 
    [:defs
@@ -301,9 +375,14 @@
     [:g {:id "Hex"}
            [:polygon {
                       :style {:fill "url(#grad)"
-                              :stroke "black"
-                              :stroke-width 0.1}
-                      :points (hex-points hex-radius)} ]]
+                              ;:stroke "black"
+                              ;:stroke-width 0.1
+                              }
+                      :points (hex-points hex-radius)} ]
+          ;[:circle {:cx 0 :cy 0 :r 3
+          ;          :stroke-width 0.1
+          ;          :stroke "black" :fill "none"}]
+     ]
 
     [:g {:id "Hex2"}
      [:polygon {
@@ -337,6 +416,10 @@
               }
      [:feGaussianBlur {:in "SourceGraphic" :stdDeviation "2"}]]
 
+    [:filter {:id "Blur2"
+              }
+     [:feGaussianBlur {:in "SourceGraphic" :stdDeviation "1"}]]
+
     ]
 
 
@@ -349,11 +432,31 @@
 
    (midden 5 13)
 
+   (for [y (range n-y)
+         x (range (if (even? y) n-x (dec n-x)))]
+     [:use {:key       (str x "-" y)
+            :x         (x-pos x y)
+            :y         (y-pos y)
+            :xlinkHref "#Hex2"}])
+
+   (for [x (range n-x)]
+
+
+     (let [[x1 y1] (xy-pos x (dec n-y))
+           [x2 y2] (xy-pos x 0)]
+       [:g
+        [:polygon {:style  {:fill "lightgreen"}
+                   :points (tri-points 5 x1 y1)}]
+        [:polygon {:style  {:fill "purple"}
+                   :points (tri-points 5 x2 y2)}]])
+
+     )
+
    (wall {:x 5 :y 5 :length 2 :theta 0})
    (wall {:x 3 :y 4 :length 1 :theta 60})
    (wall {:x 8 :y 4 :length 1 :theta -60})
-   (wall {:x 1 :y 1 :length 1 :theta 0})
-   (wall {:x 9 :y 1 :length 1 :theta 0})
+   (wall {:x 0 :y 1 :length 2 :theta 0})
+   (wall {:x 10 :y 1 :length 2 :theta 0})
 
    (river [-2 7]
           [-1 7]
@@ -378,12 +481,16 @@
           [12 16]
           [12 17])
 
-   (bridge 1 8 (/ Math/PI -3))
+   (bridge 1 8 60)
+   (bridge 6 10 0)
+   (bridge 10 12 60)
 
    (tree 5 3)
-   (tree 5 7)
-   (tree 2 8)
+   (tree 11 4)
+   (tree 6 7)
+   (tree 3 8)
    (tree 2 13)
+   (tree 3 11)
 
 
    ])

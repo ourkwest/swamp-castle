@@ -1,7 +1,8 @@
 (ns domination.core
   (:require [reagent.core :as reagent :refer [atom]]
             [clojure.string :as string]
-            [domination.board :as board]))
+            [domination.board :as board]
+            [domination.card :as card]))
 
 (enable-console-print!)
 
@@ -301,6 +302,9 @@
 
 (when-let [element (. js/document (getElementById "board"))]
   (reagent/render-component [board/render-board] element))
+
+(when-let [element (. js/document (getElementById "card"))]
+  (reagent/render-component [card/render-card] element))
 
 (defn on-js-reload []
   ;; optionally touch your app-state to force rerendering depending on

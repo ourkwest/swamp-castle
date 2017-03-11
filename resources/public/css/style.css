@@ -2,7 +2,7 @@
 
 html,body {
     font-family: Verdana;
-    margin: 1px;
+    margin: 0px;
 }
 
 
@@ -17,6 +17,10 @@ html,body {
 }
 
 div#app {
+    margin: 0px;
+}
+
+div#board, div#card {
     margin: 0px;
 }
 
@@ -43,4 +47,19 @@ input {
 
 .available {
     font-weight: bold;
+}
+
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #section-to-print, #section-to-print * {
+    visibility: visible;
+  }
+  #section-to-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
 }
