@@ -27,85 +27,119 @@
            :text-anchor "middle"}
     (str number)]])
 
-(defn render-item [{:keys [move damage range coin shield label colour money?] :as item}]
+(defn render-item
+  ([item] (render-item item nil nil))
+  ([{:keys [move damage range coin shield label colour money?] :as item} price max-price]
 
-  [:svg {:class "tokensvg"
-         :view-box (string/join " " [0 0 100 100])}
+   [:svg {:class    "tokensvg"
+          :view-box (string/join " " [0 0 100 100])}
 
-   [:circle {:style {:stroke "black"
-                     :fill (rgb colour)}
-             :cx 50
-             :cy 50
-             :r 49}]
+    [:circle {:style {:stroke "black"
+                      :fill   (rgb colour)}
+              :cx    50
+              :cy    50
+              :r     49}]
+    (if money?
+      [:g
+       [:circle {:style {:stroke "rgba(0,0,0,0.25)"
+                         :fill   (rgb colour)}
+                 :cx    50
+                 :cy    50
+                 :r     40}]
+       [:text {:x           50
+               :y           (+ 50 30)
+               :stroke      "rgba(0,0,0,0.25)"
+               :fill        "black"
+               :font-size   "85"
+               :text-anchor "middle"}
+        coin]]
+      [:g                                                   ;cake
+       [:circle {:style {:stroke "rgba(0,0,0,0.25)"
+                         :fill   "none"}
+                 :cx    50
+                 :cy    50
+                 :r     47}]
+       [:text {:x           50
+               :y           (+ 50 23)
+               :fill        "rgba(0,0,0,0.25)"
+               :stroke      "rgba(0,0,0,0.75)"
+               :font-size   "85"
+               :text-anchor "middle"} "♟"]
 
-   (cond
-     money?
-     [:g
-      [:circle {:style {:stroke "rgba(0,0,0,0.25)"
-                        :fill (rgb colour)}
-                :cx 50
-                :cy 50
-                :r 40}]
-      [:text {:x           50
-              :y           (+ 50 30)
-              :stroke "rgba(0,0,0,0.25)"
-              :fill "black"
-              :font-size   "85"
-              :text-anchor "middle"}
-       coin]]
-     (= label "Chocolate Cake")
-     [:g                                                    ;cake
-      [:circle {:style {:stroke "rgba(0,0,0,0.25)"
-                        :fill "none"}
-                :cx 50
-                :cy 50
-                :r 47}]
-      [:text {:x           50
-              :y           (+ 50 23)
-              :fill      "rgba(0,0,0,0.25)"
-              ;:fill        "none"
-              :font-size   "85"
-              :text-anchor "middle"} "♟"]
-      [:image {:x         (- 50 25)
-               :y         (- 50 50)
-               :height    "48"
-               :width     "48"
-               :xlinkHref "images/cake.png"}]
-      [:text {:x           50
-              :y           (+ 50 6)
-              :fill        "black"
-              :font-size   "18"
-              :text-anchor "middle"} "Chocolate"]
-      [:text {:x           50
-              :y           (+ 50 30)
-              :fill        "black"
-              :font-size   "18"
-              :text-anchor "middle"} "Cake"]]
-     :else
-     [:g
-      [:circle {:style {:stroke "rgba(0,0,0,0.25)"
-                        :fill "none"}
-                :cx 50
-                :cy 50
-                :r 47}]
-      [:text {:x           50
-              :y           (+ 50 23)
-              :fill      "rgba(0,0,0,0.25)"
-              ;:fill        "none"
-              :font-size   "85"
-              :text-anchor "middle"} "♟"]
-      [:text {:x           50
-              :y           (+ 50 6)
-              :fill        "black"
-              :font-size   "16"
-              :text-anchor "middle"} label]
-      (let [badge-v 23 badge-h 17]
+       (if (= label "Chocolate Cake")
+         [:g
+          [:image {:x         (- 50 25)
+                   :y         (- 50 50)
+                   :height    "48"
+                   :width     "48"
+                   :xlinkHref "images/cake.png"}]
+          [:text {:x           50
+                  :y           (+ 50 6)
+                  :fill        "black"
+                  :font-size   "18"
+                  :text-anchor "middle"} "Chocolate"]
+          [:text {:x           50
+                  :y           (+ 50 30)
+                  :fill        "black"
+                  :font-size   "18"
+                  :text-anchor "middle"} "Cake"]]
+         [:g
+          [:text {:x           50
+                  :y           (+ 50 6)
+                  :fill        "black"
+                  :font-size   "16"
+                  :text-anchor "middle"} label]
+          (let [badge-v 23 badge-h 17]
+            [:g
+             (when move (badge [0 255 0] move (if coin (- 50 badge-h) 50) (- 50 badge-v)))
+             (when coin (badge [255 255 0] coin (if move (+ 50 badge-h) 50) (- 50 badge-v)))
+             (when damage (badge [255 55 0] damage (if range (- 50 badge-h) 50) (+ 50 badge-v)))
+             (when range (badge [255 125 50] range (if damage (+ 50 badge-h) 50) (+ 50 badge-v)))
+             (when shield (badge [50 200 255] shield 50 (+ 50 badge-v)))])])]
+      ;:else
+      ;[:g
+      ; [:circle {:style {:stroke "rgba(0,0,0,0.25)"
+      ;                   :fill   "none"}
+      ;           :cx    50
+      ;           :cy    50
+      ;           :r     47}]
+      ; [:text {:x           50
+      ;         :y           (+ 50 23)
+      ;         :fill        "rgba(0,0,0,0.25)"
+      ;         ;:fill        "none"
+      ;         :font-size   "85"
+      ;         :text-anchor "middle"} "♟"]
+      ; [:text {:x           50
+      ;         :y           (+ 50 6)
+      ;         :fill        "black"
+      ;         :font-size   "16"
+      ;         :text-anchor "middle"} label]
+      ; (let [badge-v 23 badge-h 17]
+      ;   [:g
+      ;    (when move (badge [0 255 0] move (if coin (- 50 badge-h) 50) (- 50 badge-v)))
+      ;    (when coin (badge [255 255 0] coin (if move (+ 50 badge-h) 50) (- 50 badge-v)))
+      ;    (when damage (badge [255 55 0] damage (if range (- 50 badge-h) 50) (+ 50 badge-v)))
+      ;    (when range (badge [255 125 50] range (if damage (+ 50 badge-h) 50) (+ 50 badge-v)))
+      ;    (when shield (badge [50 200 255] shield 50 (+ 50 badge-v)))])]
+      )
+
+    (when price
+      (let [affordable? (<= price max-price)]
         [:g
-         (when move (badge [0 255 0] move (if coin (- 50 badge-h) 50) (- 50 badge-v)))
-         (when coin (badge [255 255 0] coin (if move (+ 50 badge-h) 50) (- 50 badge-v)))
-         (when damage (badge [255 55 0] damage (if range (- 50 badge-h) 50) (+ 50 badge-v)))
-         (when range  (badge [255 125 50] range (if damage (+ 50 badge-h) 50) (+ 50 badge-v)))
-         (when shield (badge [50 200 255] shield 50 (+ 50 badge-v)))])])])
+         [:circle {:style {;:stroke "black"
+                           :fill (if affordable? (rgb [155 255 0]) (rgb [55 55 55]))}
+                   :cx    85
+                   :cy    85
+                   :r     15}]
+
+         [:text {:x           85
+                 :y           (+ 85 9)
+                 :fill        (if affordable? (rgb [0 0 0]) (rgb [155 155 155]))
+                 :font-size   "26"
+                 :text-anchor "middle"}
+          (str price)]]))
+
+    ]))
 
 (defn add-syms [{:keys [move damage range coin shield] :as item}]
   (let [syms (remove nil? [(when move [:span {:class "badge"
@@ -204,7 +238,7 @@
 ;; normally defonce... - do this properly!!!
 (defonce app-state (add-watch (atom {:text       "Knights of Swamp Castle"
                                      :uniqueness (uniqueness)
-                                     :colour     "rgb(175,175,175)"
+                                     :colour     "rgb(200,200,200)"
                                      :hand-count 0
                                      :hand-size  4
                                      :draw       (shuffle [coin-a coin-a coin-a coin-a])
@@ -250,29 +284,36 @@
                         (update :discard conj item)
                         (update :log conj (str "Bought " (:label item))))))
 
-(defn buy-button [item]
-  [:div
-   {                                                        ;:on-click #(buy item)
-    :key      (:label item)
-    :class    "outlined"
-    :style    {:display :inline-block
-               :text-align :center
-               :background-color (rgb (:colour item))}}
-   ;[:div {:style {:display :inline-block}}]
-   [:span {:class "bigpad"
-           :style {:font-size "150%"}} (:label item)]
-   [:br]
-   (when-let [syms (:syms item)]
-     [:span
-      [:span {:style {:font-size "75%"}} syms]])
-   (when-let [desc (:desc item)]
-     [:span
-      [:span {:style {:font-size "75%"}} desc]])
-   [:br]
-   [:input {:type     :button
-            :value    (str "Buy for " (:price item))
-            :on-click #(buy item)
-            :style    {:background-color (rgb (:colour item))}}]])
+(defn buy-button [item max-price]
+  ;[:div
+  ; {                                                        ;:on-click #(buy item)
+  ;  :key      (:label item)
+  ;  :class    "outlined"
+  ;  :style    {:display :inline-block
+  ;             :text-align :center
+  ;             :background-color (rgb (:colour item))}}
+  ; ;[:div {:style {:display :inline-block}}]
+  ; [:span {:class "bigpad"
+  ;         :style {:font-size "150%"}} (:label item)]
+  ; [:br]
+  ; (when-let [syms (:syms item)]
+  ;   [:span
+  ;    [:span {:style {:font-size "75%"}} syms]])
+  ; (when-let [desc (:desc item)]
+  ;   [:span
+  ;    [:span {:style {:font-size "75%"}} desc]])
+  ; [:br]
+  ; [:input {:type     :button
+  ;          :value    (str "Buy for " (:price item))
+  ;          :on-click #(buy item)
+  ;          :style    {:background-color (rgb (:colour item))}}]]
+
+  [:div (merge {:class    "token"
+                :key      (str "buy-token-" (:label item))
+                :style    {:cursor "pointer"}
+                :on-click #(buy item)})
+   (render-item item (:price item) max-price)]
+  )
 
 ;(defn trash-from-hand [{:keys [hand trash log] :as state} item]
 ;  (let [like-item (filter #(= % item) hand)
@@ -311,7 +352,8 @@
 
 (defn hello-world []
 
-  (let [{:keys [text colour uniqueness hand-size draw hand played discard hand-count trashed trash-mode log]} @app-state]
+  (let [{:keys [text colour uniqueness hand-size draw hand played discard hand-count trashed trash-mode log]} @app-state
+        to-spend (reduce + (remove nil? (map :coin played)))]
 
     [:div
 
@@ -328,13 +370,13 @@
               :margin  "0px"}}
 
      [:div
-      {:style {:background-color colour}}
-      (str text " (Iteration " iteration ") ")
+      {:class "widelabel"
+       :style {:background-color colour}}
       [:input
        {:type "text" :placeholder "Enter your name..."}]
-      [:select {:defaultValue "rgb(175,175,175)"
+      [:select {:defaultValue "rgb(200,200,201)"
                 :on-change    #(swap! app-state assoc :colour (.-value (.-target %)))}
-       [:option {:value "rgb(175,175,175)" :disabled true} "Pick a colour"]
+       [:option {:value "rgb(200,200,201)" :disabled true} "Pick a colour"]
        [:option {:value "rgb(255,0,0)"} "red"]
        [:option {:value "rgb(255,255,0)"} "yellow"]
        [:option {:value "rgb(0,255,0)"} "green"]
@@ -417,29 +459,53 @@
      ;                 :background-color :lightgreen}}]
 
 
-     [:div {:style {:background-color colour}} (str "Buy " (reduce + (remove nil? (map :coin played))))]
+     [:div {:class "widelabel"
+            :style {:background-color colour}}
+      (str "Buy (" to-spend " to spend)")]
 
-     [:span "Money Tokens:"] [:br]
-     (buy-button coin-a) (buy-button coin-b) (buy-button coin-c) [:br]
+
+     ;[:div {:class "section"}
+     ; [:div {:class "sectionback"}]
+     ; [:div {:class "sectionlabel"}
+     ;  "Money"]
+     ; (buy-button coin-a) (buy-button coin-b) (buy-button coin-c)]
+
+     [:div {:class "section"}
+      [:div {:class "sectionback"}]
+      [:div {:class "sectionlabel"}
+       "Buy"]
+      (for [item (sort-by :price (concat characters [coin-a coin-b coin-c]))]
+        (buy-button item to-spend))]
+
+
+
+     ;[:span "Money Tokens:"] [:br]
+     ;(buy-button coin-a) (buy-button coin-b) (buy-button coin-c) [:br]
      ;(buy-button train) (buy-button shield) (buy-button gift) [:br]
 
-     [:span "Character Tokens: play up to one per minion. You may draw a new token in to your hand to replace each played Character Token."] [:br]
-     (for [item (sort-by :price characters)]
-       (buy-button item))
+     ;[:span "Character Tokens: play up to one per minion. You may draw a new token in to your hand to replace each played Character Token."] [:br]
+     ;(for [item (sort-by :price (concat characters [coin-a coin-b coin-c]))]
+     ;  (buy-button item))
 
      ;(buy-button peasant) (buy-button scout) [:br]
      ;(buy-button axeman) (buy-button swordsman) [:br]
      ;(buy-button archer) (buy-button knight)
 
+     [:input {:type :button
+              :class "drawbutton"
+              :value "Undo"
+              :on-click undo-state-change}]
 
      [:div
       {:style {:font-size "50%"}}
       (for [[id msg] (map-indexed vector log)]
         [:span {:key (str "log-" id)} msg [:br]])]
 
-     [:input {:type :button
-              :value "Undo"
-              :on-click undo-state-change}]
+
+     [:div
+      {:class "widelabel"
+       :style {:background-color colour}}
+      (str text " (Iteration " iteration ") ")]
 
      ]))
 
@@ -454,7 +520,8 @@
   (events/listen (dom/getElement "mounteddiv") (.-KEYUP events/EventType)
                  (fn [e]
                    (when (= 18 (.-keyCode e))
-                     (swap! app-state assoc :trash-mode false)))))
+                     (swap! app-state assoc :trash-mode false))))
+  (.focus (dom/getElement "mounteddiv")))
 
 (when-let [element (. js/document (getElementById "board"))]
   (reagent/render-component [board/render-board] element))
@@ -468,3 +535,10 @@
   ;; your application
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
 )
+
+
+; TODO:
+;  tidy up dead code
+;  auto trash chocolate cake when played?
+;  highlight effect on deck size when buying? (SOME effect, there's no feedback at all atm!)
+

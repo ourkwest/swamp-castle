@@ -9,6 +9,16 @@ html,body {
 /***************************/
 
 
+.widelabel {
+    font-size: 30px;
+}
+
+input[type=text] {
+    font-size: 30px;
+    border: none;
+    background-color: transparent;
+}
+
 div.token {
 //    z-index: 2;
     display: inline-block;
@@ -55,7 +65,7 @@ div.trash .tokensvg {
 //}
 
 .section {
-    height: 100px;
+    min-height: 105px;
     border: 5px solid rgb(150,150,150);
     border-radius: 5px;
     //padding: 0px;
