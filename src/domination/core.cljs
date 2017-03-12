@@ -53,7 +53,7 @@
                :font-size   "85"
                :text-anchor "middle"}
         coin]]
-      [:g                                                   ;cake
+      [:g
        [:circle {:style {:stroke "rgba(0,0,0,0.25)"
                          :fill   "none"}
                  :cx    50
@@ -95,33 +95,7 @@
              (when coin (badge [255 255 0] coin (if move (+ 50 badge-h) 50) (- 50 badge-v)))
              (when damage (badge [255 55 0] damage (if range (- 50 badge-h) 50) (+ 50 badge-v)))
              (when range (badge [255 125 50] range (if damage (+ 50 badge-h) 50) (+ 50 badge-v)))
-             (when shield (badge [50 200 255] shield 50 (+ 50 badge-v)))])])]
-      ;:else
-      ;[:g
-      ; [:circle {:style {:stroke "rgba(0,0,0,0.25)"
-      ;                   :fill   "none"}
-      ;           :cx    50
-      ;           :cy    50
-      ;           :r     47}]
-      ; [:text {:x           50
-      ;         :y           (+ 50 23)
-      ;         :fill        "rgba(0,0,0,0.25)"
-      ;         ;:fill        "none"
-      ;         :font-size   "85"
-      ;         :text-anchor "middle"} "♟"]
-      ; [:text {:x           50
-      ;         :y           (+ 50 6)
-      ;         :fill        "black"
-      ;         :font-size   "16"
-      ;         :text-anchor "middle"} label]
-      ; (let [badge-v 23 badge-h 17]
-      ;   [:g
-      ;    (when move (badge [0 255 0] move (if coin (- 50 badge-h) 50) (- 50 badge-v)))
-      ;    (when coin (badge [255 255 0] coin (if move (+ 50 badge-h) 50) (- 50 badge-v)))
-      ;    (when damage (badge [255 55 0] damage (if range (- 50 badge-h) 50) (+ 50 badge-v)))
-      ;    (when range (badge [255 125 50] range (if damage (+ 50 badge-h) 50) (+ 50 badge-v)))
-      ;    (when shield (badge [50 200 255] shield 50 (+ 50 badge-v)))])]
-      )
+             (when shield (badge [50 200 255] shield 50 (+ 50 badge-v)))])])])
 
     (when price
       (let [affordable? (<= price max-price)]
@@ -133,79 +107,72 @@
                    :r     15}]
 
          [:text {:x           85
-                 :y           (+ 85 9)
+                 :y           (+ 85 (if (<= 10 price) 8 10))
                  :fill        (if affordable? (rgb [0 0 0]) (rgb [155 155 155]))
-                 :font-size   "26"
+                 :font-size   (if (<= 10 price) "22" "28")
                  :text-anchor "middle"}
-          (str price)]]))
+          (str price)]]))]))
 
-    ]))
-
-(defn add-syms [{:keys [move damage range coin shield] :as item}]
-  (let [syms (remove nil? [(when move [:span {:class "badge"
-                                               :key   "m"
-                                               :style {:background-color "rgb(0,255,0)"}}
-                                       [:span {:class "badgecontent"} (str move)]])
-                            (when damage [:span {:class "badge"
-                                                 :key   "d"
-                                                 :style {:background-color "rgb(255,55,0)"}}
-                                          [:span {:class "badgecontent"} (str damage)]])
-                            (when range [:span {:class "badge"
-                                                :key   "r"
-                                                :style {:background-color "rgb(255, 125, 0)"}}
-                                         [:span {:class "badgecontent"} (str range)]])
-                            (when coin [:span {:class "badge"
-                                               :key   "c"
-                                               :style {:background-color "rgb(255,225,0)"}}
-                                        [:span {:class "badgecontent"} (str coin)]])
-                            (when shield [:span {:class "badge"
-                                                :key   "t"
-                                                :style {:background-color "rgb(0,200,250)"}}
-                                          [:span {:class "badgecontent"} (str shield)]])])]
-    (if (empty? syms)
-      item
-      (assoc item :syms [:span syms]))))
+;(defn add-syms [{:keys [move damage range coin shield] :as item}]
+;  (let [syms (remove nil? [(when move [:span {:class "badge"
+;                                               :key   "m"
+;                                               :style {:background-color "rgb(0,255,0)"}}
+;                                       [:span {:class "badgecontent"} (str move)]])
+;                            (when damage [:span {:class "badge"
+;                                                 :key   "d"
+;                                                 :style {:background-color "rgb(255,55,0)"}}
+;                                          [:span {:class "badgecontent"} (str damage)]])
+;                            (when range [:span {:class "badge"
+;                                                :key   "r"
+;                                                :style {:background-color "rgb(255, 125, 0)"}}
+;                                         [:span {:class "badgecontent"} (str range)]])
+;                            (when coin [:span {:class "badge"
+;                                               :key   "c"
+;                                               :style {:background-color "rgb(255,225,0)"}}
+;                                        [:span {:class "badgecontent"} (str coin)]])
+;                            (when shield [:span {:class "badge"
+;                                                :key   "t"
+;                                                :style {:background-color "rgb(0,200,250)"}}
+;                                          [:span {:class "badgecontent"} (str shield)]])])]
+;    (if (empty? syms)
+;      item
+;      (assoc item :syms [:span syms]))))
 
 (def max-coins 4)
 (defn make-money [amount price]
-  (add-syms {:label  (if (= 1 amount) "1 Coin" (str amount " Coins"))
-             :colour [255 255 (int (* 255 (- 1 (/ amount max-coins))))]
-             :coin   amount
-             :money? true
-             :price  price}))
+  {:label  (if (= 1 amount) "1 Coin" (str amount " Coins"))
+   :colour [255 255 (int (* 255 (- 1 (/ amount max-coins))))]
+   :coin   amount
+   :money? true
+   :price  price})
 
 (def coin-a (make-money 1 0))
 (def coin-b (make-money 2 4))
 (def coin-c (make-money 4 8))
 
-(defn add-colour [{:keys [move damage colour] :as item}]
-  (let [df (- 1 (/ damage 7))
-        mf (- 1 (/ move 7))
-        r (int (* 255 mf))
-        g (int (* 255 mf df))
-        b (int (* 255 df))]
-    (assoc item :colour (or colour [150 200 255]))))
+;(defn add-colour [{:keys [move damage colour] :as item}]
+;  (let [df (- 1 (/ damage 7))
+;        mf (- 1 (/ move 7))
+;        r (int (* 255 mf))
+;        g (int (* 255 mf df))
+;        b (int (* 255 df))]
+;    (assoc item :colour (or colour [150 200 255]))))
 
-(defn add-price [{:keys [move damage range token coin price] :as item}]
-  (let [r-cost (if range 1 0)
-        cost (+ (- (* 2 (+ move damage r-cost token)) (Math/abs (- move damage))) coin)]
-    (assoc item :price (or price cost))))
-
-(def prepare-item (comp add-syms add-colour add-price))
+;(defn add-price [{:keys [move damage range token coin price] :as item}]
+;  (let [r-cost (if range 1 0)
+;        cost (+ (- (* 2 (+ move damage r-cost token)) (Math/abs (- move damage))) coin)]
+;    (assoc item :price (or price cost))))
 
 (defn character [label move damage coin shield range price colour desc]
-  (let [character-label (.replace label " " "-")
-        ;character-symbol (symbol character-label)
-        ]
-    (prepare-item {:label label                             ;character-label
-                   :move move
-                   :damage damage
-                   :shield shield
-                   :coin coin
-                   :range range
-                   :price price
-                   :colour colour
-                   :desc desc})))
+  {:label label
+   :move move
+   :damage damage
+   :shield shield
+   :coin coin
+   :range range
+   :price price
+   :colour (or colour [150 200 255])
+   :desc desc})
 
 (def characters
   [
@@ -230,26 +197,30 @@
    ;(character "Chocolate Cake"  nil   nil   nil   nil   nil   10    [255 50 200] "Sacrifice this token and ♟ in the Castle for a Victory Point.")
    ])
 
-(defn uniqueness []
-  [(int (rand 255)) (int (rand 255)) (int (rand 255))])
+;(defn uniqueness []
+;  [(int (rand 255)) (int (rand 255)) (int (rand 255))])
 
 (defonce state-history (atom '()))
 
 ;; normally defonce... - do this properly!!!
 (defonce app-state (add-watch (atom {:text       "Knights of Swamp Castle"
-                                     :uniqueness (uniqueness)
+                                     ;:uniqueness (uniqueness)
                                      :colour     "rgb(200,200,200)"
-                                     :hand-count 0
                                      :hand-size  4
+                                     :trash-mode false
+                                     :log        '()
+
+                                     :hand-no    0
                                      :draw       (shuffle [coin-a coin-a coin-a coin-a])
                                      :hand       []
                                      :played     []
                                      :discard    []
-                                     :trashed    []
-                                     :log        '()})
+                                     :trashed    []})
                               :history
-                              (fn [_ _ old _]
-                                (swap! state-history conj old))))
+                              (fn [_ _ old new]
+                                (when (not= (select-keys old [:hand-no :draw :hand :played :discard :trashed])
+                                            (select-keys new [:hand-no :draw :hand :played :discard :trashed]))
+                                  (swap! state-history conj old)))))
 
 (defn undo-state-change []
   (let [[prev & history] @state-history]
@@ -267,16 +238,16 @@
     :else (draw-tokens (dec n) (rest draw) (conj hand (first draw)) discard)))
 
 (defn draw-to-hand
-  ([{:keys [hand-size draw hand played discard hand-count log] :as state} draw-type]
-   (let [[n hand' played' discard' hand-count'] (case draw-type
-                                          :hand [hand-size [] [] (concat discard played hand) (inc hand-count)]
-                                          :token [1 hand played discard hand-count])
+  ([{:keys [hand-size draw hand played discard hand-no log] :as state} draw-type]
+   (let [[n hand' played' discard' hand-no'] (case draw-type
+                                          :hand [hand-size [] [] (concat discard played hand) (inc hand-no)]
+                                          :token [1 hand played discard hand-no])
          [new-draw new-hand new-discard] (draw-tokens n draw hand' discard')]
      (assoc state :draw new-draw
                   :hand (vec (remove :money? new-hand))
                   :played (vec (concat played' (filter :money? new-hand)))
                   :discard new-discard
-                  :hand-count hand-count'
+                  :hand-no hand-no'
                   :log (conj log (str "Drew: " (string/join ", " (map :label (take-last n new-hand)))))))))
 
 (defn buy [item]
@@ -284,89 +255,53 @@
                         (update :discard conj item)
                         (update :log conj (str "Bought " (:label item))))))
 
-(defn buy-button [item max-price]
-  ;[:div
-  ; {                                                        ;:on-click #(buy item)
-  ;  :key      (:label item)
-  ;  :class    "outlined"
-  ;  :style    {:display :inline-block
-  ;             :text-align :center
-  ;             :background-color (rgb (:colour item))}}
-  ; ;[:div {:style {:display :inline-block}}]
-  ; [:span {:class "bigpad"
-  ;         :style {:font-size "150%"}} (:label item)]
-  ; [:br]
-  ; (when-let [syms (:syms item)]
-  ;   [:span
-  ;    [:span {:style {:font-size "75%"}} syms]])
-  ; (when-let [desc (:desc item)]
-  ;   [:span
-  ;    [:span {:style {:font-size "75%"}} desc]])
-  ; [:br]
-  ; [:input {:type     :button
-  ;          :value    (str "Buy for " (:price item))
-  ;          :on-click #(buy item)
-  ;          :style    {:background-color (rgb (:colour item))}}]]
+(defn button-like [f]
+  {:on-click    f
+   :on-key-down #(do
+                   (when (#{13 32} (.-keyCode %)) (f))
+                   (.focus (dom/getElement "mounteddiv")))})
 
+(defn buy-button [item max-price index]
   [:div (merge {:class    "token"
                 :key      (str "buy-token-" (:label item))
                 :style    {:cursor "pointer"}
-                :on-click #(buy item)})
-   (render-item item (:price item) max-price)]
-  )
-
-;(defn trash-from-hand [{:keys [hand trash log] :as state} item]
-;  (let [like-item (filter #(= % item) hand)
-;        not-item (remove #(= % item) hand)]
-;    (assoc state :trash (vec (conj trash item))
-;                 :hand (vec (sort-by (juxt :category :value)
-;                                     (concat not-item (rest like-item))))
-;                 :log (conj log (str "Trashed: " (:label item))))))
-
-(defn play [{:keys [hand played log] :as state} hand-index]
-  (-> state
-      (assoc :played (vec (conj played (nth hand hand-index)))
-             :hand (vec (concat (take hand-index hand) (drop (inc hand-index) hand)))
-             :log (conj log (str "Played: " (:label (nth hand hand-index)))))
-      (draw-to-hand :token)))
+                :tabIndex (+ 300 index)}
+               (button-like #(buy item)))
+   (render-item item (:price item) max-price)])
 
 (defn trash-from-hand [{:keys [hand trashed log] :as state} hand-index]
   (assoc state :trashed (vec (conj trashed (nth hand hand-index)))
                :hand (vec (concat (take hand-index hand) (drop (inc hand-index) hand)))
                :log (conj log (str "Trashed: " (:label (nth hand hand-index))))))
 
+(defn play [{:keys [hand played log] :as state} hand-index]
+  (let [item (nth hand hand-index)]
+    (if (-> item :label (= "Chocolate Cake"))
+      (-> state
+          (assoc :log (conj log "Played Chocolate Cake :-D "))
+          (trash-from-hand hand-index)
+          (draw-to-hand :token))
+      (-> state
+          (assoc :played (vec (conj played item))
+                 :hand (vec (concat (take hand-index hand) (drop (inc hand-index) hand)))
+                 :log (conj log (str "Played: " (:label item))))
+          (draw-to-hand :token)))))
+
 (defn trash-from-played [{:keys [played trashed log] :as state} played-index]
   (assoc state :trashed (vec (conj trashed (nth played played-index)))
                :played (vec (concat (take played-index played) (drop (inc played-index) played)))
                :log (conj log (str "Trashed: " (:label (nth played played-index))))))
 
-;(defn untrash-to-hand [{:keys [hand trash log] :as state} item]
-;  (let [like-item (filter #(= % item) trash)
-;        not-item (remove #(= % item) trash)]
-;    (assoc state :hand (vec (sort-by (juxt :category :value) (conj hand item)))
-;                 :trash (vec (concat not-item (rest like-item)))
-;                 :log (conj log (str "Un-trashed: " (:label item))))))
-
-(defn sum-categories [m {:keys [category value]}]
-  (update m category (fnil + 0) value))
-
 (defn hello-world []
 
-  (let [{:keys [text colour uniqueness hand-size draw hand played discard hand-count trashed trash-mode log]} @app-state
+  (let [{:keys [text colour hand-size draw hand played discard hand-no trashed trash-mode log]} @app-state
         to-spend (reduce + (remove nil? (map :coin played)))]
 
     [:div
 
      {:id "mounteddiv"
-      ;:on-key-down (fn [e]
-      ;               (println "key press" (.-charCode e))
-      ;               (if (= 13 (.-charCode e))
-      ;                 (println "ENTER")
-      ;                 (println "NOT ENTER")))
       :tabIndex 1
-      :style {;:border (str "3px solid " colour)
-              ;:border-top (str "20px solid " colour)
-              :padding "0px"
+      :style {:padding "0px"
               :margin  "0px"}}
 
      [:div
@@ -384,25 +319,37 @@
        [:option {:value "rgb(200,200,200)"} "white"]
        [:option {:value "rgb(50,50,50)"} "black"]]]
 
-
      [:div
-     [:input {:type :button
-              :class "drawbutton"
-              :value "Draw Hand"
-              :on-click #(swap! app-state draw-to-hand :hand)}]
-     ;"\u00A0"
-     ;[:input {:type :button
-     ;         :value (str "Draw 1")
-     ;         :on-click #(swap! app-state draw-to-hand :token)
-     ;         :style {:color :green
-     ;                 :font-size "125%"
-     ;                 :background-color :lightgreen}}]
+      [:input {:type :button
+               :class "drawbutton"
+               :value "Draw Hand"
+               :on-click #(swap! app-state draw-to-hand :hand)}]
 
+      (let [draw-count (count draw)
+            discard-count (count discard)
+            ;deck-count (+ discard-count (count hand) (count played) draw-count)
+            deck-str (string/join (concat (repeat discard-count \|)
+                                          [\<]
+                                          (repeat (+ (count hand) (count played)) \|)
+                                          [\>]
+                                          (repeat draw-count \|)
+                                          ))]
+        [:span
+         [:span {:class "h-spaced"} (str "Hand #: " hand-no)]
 
-      [:span {:class "h-spaced"} (str " Hand #: " hand-count)]
-      [:span {:class "h-spaced"} (str " Draw pile: " (count draw))]
-      [:span {:class "h-spaced"} (str " Discard pile: " (count discard))]
-      [:span {:class "h-spaced"} (str " Total deck: " (+ (count discard) (count hand) (count draw)))]]
+         [:span {:class "h-spaced"}
+          [:span "Deck: "]
+          [:span {:class "flashlabel"
+                  :key   (str "deck-" deck-str)}
+           deck-str]]
+
+         ;[:span {:class "h-spaced flashlabel"
+         ;        :key   (str "draw-pile-count-" draw-count)} (string/join (cons "Draw pile: " (repeat draw-count \|)))]
+         ;[:span {:class "h-spaced flashlabel"
+         ;        :key   (str "discard-pile-count-" discard-count)} (string/join (cons "Discard pile: " (repeat discard-count \|)))]
+         ;[:span {:class "h-spaced flashlabel"
+         ;        :key   (str "deck-count-" deck-count)} (string/join (cons "Total deck: " (repeat deck-count \|)))]
+         ])]
 
      [:div {:class "section"}
       [:div {:class "sectionback"}]
@@ -410,26 +357,28 @@
        "Hand"]
       (for [[index item] (map-indexed vector hand)]
         [:div (merge {:class    "token"
-                      :key      (str "token-" hand-count "-" index)
-                      :style    {:cursor "pointer"}
-                      :on-click #(swap! app-state play index)}
-                     (when trash-mode
-                       {:on-click #(swap! app-state trash-from-hand index)
-                        :style    {:cursor "crosshair"}}))
-         (render-item item)])
-
-      ]
+                      :key      (str "token-" hand-no "-" index)
+                      :style    {:cursor (if trash-mode "crosshair" "pointer")}
+                      :tabIndex (+ 100 index)}
+                     (button-like
+                       (if trash-mode
+                         #(swap! app-state trash-from-hand index)
+                         #(swap! app-state play index))))
+         (render-item item)])]
      [:div {:class "section"}
       [:div {:class "sectionback"}]
       [:div {:class "sectionlabel"}
        "Played"]
       (for [[index item] (map-indexed vector played)]
         [:div (merge {:class "token"
-                      :key   (str "token-" hand-count "-" index)
+                      :key   (str "token-" hand-no "-" index)
                       :style {:cursor "default"}}
-                     (when trash-mode
-                       {:on-click #(swap! app-state trash-from-played index)
-                        :style    {:cursor "crosshair"}}))
+                     (when (and trash-mode (:money? item))
+                       (merge
+                         (button-like #(swap! app-state trash-from-played index))
+                         {:style    {:cursor "crosshair"}
+                          :tabIndex (+ 200 index)}))
+                     )
          (render-item item)])]
 
      (when trash-mode
@@ -440,59 +389,20 @@
                  :key   (str "token-" index)}
            (render-item item)])])
 
-
-
-     ;[:br]
-
-     ;[:input {:type :button
-     ;         :value (str "Draw " hand-size)
-     ;         :on-click #(swap! app-state draw-to-hand :hand)
-     ;         :style {:color :green
-     ;                 :font-size "150%"
-     ;                 :background-color :lightgreen}}]
-     ;"\u00A0"
-     ;[:input {:type :button
-     ;         :value (str "Draw 1")
-     ;         :on-click #(swap! app-state draw-to-hand :token)
-     ;         :style {:color :green
-     ;                 :font-size "125%"
-     ;                 :background-color :lightgreen}}]
-
-
      [:div {:class "widelabel"
             :style {:background-color colour}}
       (str "Buy (" to-spend " to spend)")]
-
-
-     ;[:div {:class "section"}
-     ; [:div {:class "sectionback"}]
-     ; [:div {:class "sectionlabel"}
-     ;  "Money"]
-     ; (buy-button coin-a) (buy-button coin-b) (buy-button coin-c)]
 
      [:div {:class "section"}
       [:div {:class "sectionback"}]
       [:div {:class "sectionlabel"}
        "Buy"]
-      (for [item (sort-by :price (concat characters [coin-a coin-b coin-c]))]
-        (buy-button item to-spend))]
-
-
-
-     ;[:span "Money Tokens:"] [:br]
-     ;(buy-button coin-a) (buy-button coin-b) (buy-button coin-c) [:br]
-     ;(buy-button train) (buy-button shield) (buy-button gift) [:br]
-
-     ;[:span "Character Tokens: play up to one per minion. You may draw a new token in to your hand to replace each played Character Token."] [:br]
-     ;(for [item (sort-by :price (concat characters [coin-a coin-b coin-c]))]
-     ;  (buy-button item))
-
-     ;(buy-button peasant) (buy-button scout) [:br]
-     ;(buy-button axeman) (buy-button swordsman) [:br]
-     ;(buy-button archer) (buy-button knight)
+      (for [[index item] (map-indexed vector (sort-by :price (concat characters [coin-a coin-b coin-c])))]
+        (buy-button item to-spend index))]
 
      [:input {:type :button
               :class "drawbutton"
+              :tabIndex 1000
               :value "Undo"
               :on-click undo-state-change}]
 
@@ -511,7 +421,7 @@
 
 (when-let [element (. js/document (getElementById "app"))]
   (reagent/render-component [hello-world] element)
-  (println (dom/getElement "mounteddiv"))
+  ;(println (dom/getElement "mounteddiv"))
   (events/listen (dom/getElement "mounteddiv") (.-KEYDOWN events/EventType)
                  (fn [e]
                    ;(println (.-keyCode e))
@@ -539,6 +449,4 @@
 
 ; TODO:
 ;  tidy up dead code
-;  auto trash chocolate cake when played?
-;  highlight effect on deck size when buying? (SOME effect, there's no feedback at all atm!)
 

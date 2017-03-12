@@ -13,6 +13,10 @@ html,body {
     font-size: 30px;
 }
 
+.flashlabel {
+    animation: flashIn 2s;
+}
+
 input[type=text] {
     font-size: 30px;
     border: none;
@@ -114,6 +118,15 @@ div.trash .tokensvg {
     to {
         opacity: 1;
         transform: rotate(0deg) scale(1);
+    }
+}
+
+@keyframes flashIn {
+    from {
+        background-color: magenta;
+    }
+    to {
+        background-color: transparent;
     }
 }
 
