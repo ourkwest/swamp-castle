@@ -10,6 +10,9 @@
 
 (def iteration 11)
 
+(defn refocus-soon []
+  (js/setTimeout #(.focus (dom/getElement "mounteddiv")) 200))
+
 (defn rgb [[r g b]]
   (str "rgb(" r \, g \, b \)))
 
@@ -98,7 +101,10 @@
              (when shield (badge [50 200 255] shield 50 (+ 50 badge-v)))])])])
 
     (when price
-      (let [affordable? (<= price max-price)]
+      (let [affordable?
+            true
+            ;(<= price max-price)
+            ]
         [:g
          [:circle {:style {;:stroke "black"
                            :fill (if affordable? (rgb [155 255 0]) (rgb [55 55 55]))}
@@ -113,31 +119,6 @@
                  :text-anchor "middle"}
           (str price)]]))]))
 
-;(defn add-syms [{:keys [move damage range coin shield] :as item}]
-;  (let [syms (remove nil? [(when move [:span {:class "badge"
-;                                               :key   "m"
-;                                               :style {:background-color "rgb(0,255,0)"}}
-;                                       [:span {:class "badgecontent"} (str move)]])
-;                            (when damage [:span {:class "badge"
-;                                                 :key   "d"
-;                                                 :style {:background-color "rgb(255,55,0)"}}
-;                                          [:span {:class "badgecontent"} (str damage)]])
-;                            (when range [:span {:class "badge"
-;                                                :key   "r"
-;                                                :style {:background-color "rgb(255, 125, 0)"}}
-;                                         [:span {:class "badgecontent"} (str range)]])
-;                            (when coin [:span {:class "badge"
-;                                               :key   "c"
-;                                               :style {:background-color "rgb(255,225,0)"}}
-;                                        [:span {:class "badgecontent"} (str coin)]])
-;                            (when shield [:span {:class "badge"
-;                                                :key   "t"
-;                                                :style {:background-color "rgb(0,200,250)"}}
-;                                          [:span {:class "badgecontent"} (str shield)]])])]
-;    (if (empty? syms)
-;      item
-;      (assoc item :syms [:span syms]))))
-
 (def max-coins 4)
 (defn make-money [amount price]
   {:label  (if (= 1 amount) "1 Coin" (str amount " Coins"))
@@ -149,19 +130,6 @@
 (def coin-a (make-money 1 0))
 (def coin-b (make-money 2 4))
 (def coin-c (make-money 4 8))
-
-;(defn add-colour [{:keys [move damage colour] :as item}]
-;  (let [df (- 1 (/ damage 7))
-;        mf (- 1 (/ move 7))
-;        r (int (* 255 mf))
-;        g (int (* 255 mf df))
-;        b (int (* 255 df))]
-;    (assoc item :colour (or colour [150 200 255]))))
-
-;(defn add-price [{:keys [move damage range token coin price] :as item}]
-;  (let [r-cost (if range 1 0)
-;        cost (+ (- (* 2 (+ move damage r-cost token)) (Math/abs (- move damage))) coin)]
-;    (assoc item :price (or price cost))))
 
 (defn character [label move damage coin shield range price colour desc]
   {:label label
@@ -270,11 +238,13 @@
    (render-item item (:price item) max-price)])
 
 (defn trash-from-hand [{:keys [hand trashed log] :as state} hand-index]
+  (refocus-soon)
   (assoc state :trashed (vec (conj trashed (nth hand hand-index)))
                :hand (vec (concat (take hand-index hand) (drop (inc hand-index) hand)))
                :log (conj log (str "Trashed: " (:label (nth hand hand-index))))))
 
 (defn play [{:keys [hand played log] :as state} hand-index]
+  (refocus-soon)
   (let [item (nth hand hand-index)]
     (if (-> item :label (= "Chocolate Cake"))
       (-> state
@@ -288,6 +258,7 @@
           (draw-to-hand :token)))))
 
 (defn trash-from-played [{:keys [played trashed log] :as state} played-index]
+  (refocus-soon)
   (assoc state :trashed (vec (conj trashed (nth played played-index)))
                :played (vec (concat (take played-index played) (drop (inc played-index) played)))
                :log (conj log (str "Trashed: " (:label (nth played played-index))))))
@@ -431,7 +402,7 @@
                  (fn [e]
                    (when (= 18 (.-keyCode e))
                      (swap! app-state assoc :trash-mode false))))
-  (.focus (dom/getElement "mounteddiv")))
+  (refocus-soon))
 
 (when-let [element (. js/document (getElementById "board"))]
   (reagent/render-component [board/render-board] element))

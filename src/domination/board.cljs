@@ -3,7 +3,6 @@
 
 
 
-
 (defn hex-points
   ([r] (hex-points r 0 0))
   ([r x-off y-off]
@@ -23,12 +22,12 @@
 
 (def width 210)
 (def height 297)
-(def hex-radius 10)
+(def hex-radius 12)
 (def x-step (* (/ (Math/sqrt 3) 2) 2 hex-radius))
 (def y-step (* (/ 3 2) hex-radius))
 
-(def n-x 12)
-(def n-y 17)
+(def n-x 10)
+(def n-y 15)
 (def y-spare (- height (* (dec n-y) y-step)))
 (def y-start (/ y-spare 2))
 (def x-spare-even (- width (* (dec n-x) x-step)))
@@ -48,8 +47,11 @@
 (defn rgb [[r g b]]
   (str "rgb(" r \, g \, b \)))
 
+(defn rgba [[r g b a]]
+  (str "rgba(" r \, g \, b \, a \)))
+
 (defn wall [{:keys [x y theta length]}]
-  (let [x-loc (x-pos x y)
+  (let [x-loc (x-pos x (int y))
         y-loc (y-pos y)]
     [:g {:id        (str "Wall-" x "-" y)
          :transform (str "rotate(" theta "," x-loc "," y-loc ")")
@@ -192,29 +194,45 @@
    (for [[xpp ypp] (map xy-pos
                         [x (inc x) (dec x) x       (inc x)       x (inc x)]
                         [y       y       y (inc y) (inc y) (dec y) (dec y)])]
-     [:circle {:cx     xpp
+     [:circle {:key    (str (rand 1000000))
+               :cx     xpp
                :cy     ypp
                :r      (* x-step 0.4)
                :style  {:fill (rgb [150 100 50])}
                :filter "url(#Blur2)"}])
 
    (for [theta (range 1000)]
-
      (let [n (rand)]
-       [:circle {:cx    (+ xp (* (Math/sin theta) n x-step 1.1))
+       [:circle {:key   (str (rand 1000000))
+                 :cx    (+ xp (* (Math/sin theta) n x-step 1.1))
                  :cy    (+ yp (* (Math/cos theta) n x-step 1.1))
                  :r     (+ (* (rand) (- 1 n)) 0.2)
-                 :style {:fill (rgb [(+ 50 (rand-int 100)) (+ 25 (rand-int 100)) (rand-int 100)])}}])
+                 :style {:fill (rgb [(+ 50 (rand-int 100)) (+ 25 (rand-int 100)) (rand-int 100)])}}]))
 
-     )
+   (for [[xpp ypp] (map xy-pos
+                        [x (inc x) (dec x) x       (inc x)       x (inc x)]
+                        [y       y       y (inc y) (inc y) (dec y) (dec y)])]
+     [:g
+      [:text {:x            xpp
+              :y            (+ ypp 4)
+              :fill         "rgba(0,0,0,0.25)"
+              :stroke       "black"
+              :stroke-width 0.33
+              :text-anchor  "middle"}
+       "♟"]
+      [:text {:x           (+ xpp 0)
+              :y           (+ ypp 2)
+              :font-size   "4"
+              :text-anchor "middle"}
+       "Midden"]])
 
-   [:text {:x           xp
-           :y           (+ yp 3)
-           :fill        "white"
-           :font-size   "10"
-           :text-anchor "middle"
-           }
-    "Midden"]
+   ;[:text {:x           xp
+   ;        :y           (+ yp 3)
+   ;        :fill        "white"
+   ;        :font-size   "10"
+   ;        :text-anchor "middle"
+   ;        }
+   ; "Midden"]
    ;
    ;(let [[xp yp] (xy-pos x y)]
    ;  [:use {:x         xp
@@ -250,7 +268,7 @@
 
   (let [x2 (+ x (* size (Math/sin theta) q))
         y2 (+ y (* size (Math/cos theta) q))]
-    [:g
+    [:g {:key    (str (rand 1000000))}
      [:line {:x1           x
              :y1           y
              :x2           x2
@@ -266,19 +284,25 @@
   )
 
 (defn tree [x y]
+
   (let [[xp yp] (xy-pos x y)]
     [:g
      ;[:circle {:cx xp :cy yp :r (/ x-step 25) :fill (rgb [150 100 50])}]
      (for [n (range 5)]
         (branch xp yp (+ n (rand)) (/ x-step 5) (+ 0.75 (rand 0.25)) 3))
 
-     (for [theta (range 1000)]
+     (for [theta
+           ;[1 2 3]
+           (range 1000)
+           ]
 
        (let [n (rand)]
-         [:circle {:cx    (+ xp (* (Math/sin theta) n x-step 0.5))
+         [:circle {:key    (str (rand 1000000))
+                   :cx    (+ xp (* (Math/sin theta) n x-step 0.5))
                    :cy    (+ yp (* (Math/cos theta) n x-step 0.5))
                    :r     (+ (/ (rand) 2) 0.2)
-                   :style {:fill "rgba(25,175,75,0.5)"}}]))]))
+                   :style {:fill "rgba(25,175,75,0.5)"}}]))])
+  )
 
 (defn bridge [x y theta]
   (let [[xp yp] (xy-pos x y)]
@@ -340,23 +364,14 @@
                :stroke (rgb [150 150 150])
                :stroke-width 0.6
                :stroke-dasharray "2,0.2"
-               :fill "none"}]
-
-       ])
-
-    ))
+               :fill "none"}]])))
 
 (defn render-board []
 
   [:h1 "BOARD?"]
 
   [:svg {:id "section-to-print"
-         :style    {
-                    :width  "100%"
-                    ;:height "100%"
-
-                    ;:border "1px solid black"
-                    }
+         :style    {:width  "100%"}
          :view-box (string/join " " [0 0 width height])}
 
    [:defs
@@ -374,15 +389,8 @@
 
     [:g {:id "Hex"}
            [:polygon {
-                      :style {:fill "url(#grad)"
-                              ;:stroke "black"
-                              ;:stroke-width 0.1
-                              }
-                      :points (hex-points hex-radius)} ]
-          ;[:circle {:cx 0 :cy 0 :r 3
-          ;          :stroke-width 0.1
-          ;          :stroke "black" :fill "none"}]
-     ]
+                      :style {:fill "url(#grad)"}
+                      :points (hex-points hex-radius)}]]
 
     [:g {:id "Hex2"}
      [:polygon {
@@ -403,25 +411,11 @@
                          :stroke-width 1}
                 :points (hex-points (* 0.8 hex-radius))} ]]
 
-    ;[:filter {:id "Water"
-    ;          ;:filterUnits "userSpaceOnUse"
-    ;          :x "0%"
-    ;          :y "0%"
-    ;          :width "100%"
-    ;          :height "100%"
-    ;          }
-    ; [:feTurbulence {:baseFrequency "0.05" :numOctaves "8"}]]
-    ;
-    [:filter {:id "Blur"
-              }
+    [:filter {:id "Blur"}
      [:feGaussianBlur {:in "SourceGraphic" :stdDeviation "2"}]]
 
-    [:filter {:id "Blur2"
-              }
-     [:feGaussianBlur {:in "SourceGraphic" :stdDeviation "1"}]]
-
-    ]
-
+    [:filter {:id "Blur2"}
+     [:feGaussianBlur {:in "SourceGraphic" :stdDeviation "1"}]]]
 
    (for [y (range n-y)
          x (range (if (even? y) n-x (dec n-x)))]
@@ -430,7 +424,7 @@
             :y         (y-pos y)
             :xlinkHref "#Hex"}])
 
-   (midden 5 13)
+   (midden 4 7)
 
    (for [y (range n-y)
          x (range (if (even? y) n-x (dec n-x)))]
@@ -440,23 +434,42 @@
             :xlinkHref "#Hex2"}])
 
    (for [x (range n-x)]
-
-
      (let [[x1 y1] (xy-pos x (dec n-y))
            [x2 y2] (xy-pos x 0)]
-       [:g
-        [:polygon {:style  {:fill "lightgreen"}
-                   :points (tri-points 5 x1 y1)}]
-        [:polygon {:style  {:fill "purple"}
-                   :points (tri-points 5 x2 y2)}]])
+       [:g {:key    (str (rand 1000000))}
+        [:text {:x            x1
+                :y            (+ 4 y1)
+                :stroke       (rgb [0 200 50])
+                :fill         (rgba [0 200 50 0.5])
+                :stroke-width 0.33
+                :text-anchor  "middle"
+                } "♟"]
+        [:text {:x            x2
+                :y            (+ 4 y2)
+                :stroke       (rgb [255 50 200])
+                :fill         (rgba [255 50 200 0.5])
+                :stroke-width 0.33
+                :text-anchor  "middle"
+                } "♟"]
+        [:text {:x            x1
+                :y            (+ 2 y1)
+                :stroke-width 0.33
+                :font-size    "4"
+                :text-anchor  "middle"
+                } "Start"]
+        [:text {:x            x2
+                :y            (+ 2 y2)
+                :stroke-width 0.33
+                :font-size    "4"
+                :text-anchor  "middle"
+                } "Cake!"]
+        ]))
 
-     )
-
-   (wall {:x 5 :y 5 :length 2 :theta 0})
-   (wall {:x 3 :y 4 :length 1 :theta 60})
-   (wall {:x 8 :y 4 :length 1 :theta -60})
-   (wall {:x 0 :y 1 :length 2 :theta 0})
-   (wall {:x 10 :y 1 :length 2 :theta 0})
+   (wall {:x -1 :y 1 :length 2 :theta 0})
+   (wall {:x 2.25 :y 3.5 :length 0.5 :theta 60})
+   (wall {:x 4.5 :y 4 :length 1.5 :theta 0})
+   (wall {:x 5.75 :y 3.5 :length 0.5 :theta -60})
+   (wall {:x 9 :y 1 :length 2 :theta 0})
 
    (river [-2 7]
           [-1 7]
@@ -465,33 +478,43 @@
           [1 9]
           [2 9]
           [3 9]
-          [4 9]
-          ;[4 10]
+          ;[4 9]
+          [4 10]
           [5 10]
           ;[5 11]
           [6 10]
           [7 10]
-          [8 10]
-          [8 11]
-          [9 11]
+          ;[8 10]
+          [7 11]
+          [8 12]
+          [9 12]
           [10 12]
-          [10 13]
-          [11 14]
-          [11 15]
-          [12 16]
-          [12 17])
+          [11 12]
+          ;[10 12]
+          ;[10 14]
+          ;[10 15]
+          ;[11 16]
+          ;[11 17]
+          )
 
    (bridge 1 8 60)
-   (bridge 6 10 0)
-   (bridge 10 12 60)
+   (bridge 5 10 0)
+   (bridge 7 11 60)
+   (bridge 9 12 0)
 
-   (tree 5 3)
-   (tree 11 4)
-   (tree 6 7)
-   (tree 3 8)
-   (tree 2 13)
-   (tree 3 11)
+   (tree 4 1)
+   (tree 0 2)
+   (tree 8 4)
+   (tree 2 8)
+   (tree 9 8)
+   (tree 3 10)
+   (tree 8 11)
+   (tree 0 13)
 
+   ;(tree 6 7)
+   ;(tree 3 8)
+   ;(tree 2 13)
+   ;(tree 3 11)
 
    ])
 
