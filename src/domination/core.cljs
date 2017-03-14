@@ -148,10 +148,10 @@
 
    (character "Farmer"          1     nil   1     nil    nil   2     nil   nil)
    (character "Horse Rider"     3     nil   nil   nil    nil   3     nil   nil)
-   (character "Brigand"         1     1     2     nil    nil   4     nil   nil)
+   (character "Brigand"         2     1     1     nil    nil   4     nil   nil)
    (character "Archer"          2     1     nil   nil    4     5     nil   nil)
    (character "Blacksmith"      nil   nil   nil   1      nil   6     nil   nil)
-   (character "Bezerker"        1     3     nil   nil    nil   7     nil   nil)
+   (character "Bezerker"        2     3     nil   nil    nil   7     nil   nil)
    (character "Assassin"        2     2     2     nil    nil   8     nil   nil)
    (character "Chocolate Cake"  nil   nil   nil   nil    nil   10    [255 50 200] "Sacrifice this token and ♟ in the Castle for a Victory Point.")
 
@@ -376,6 +376,13 @@
               :tabIndex 1000
               :value "Undo"
               :on-click undo-state-change}]
+
+     [:span {:class "badge-label" :style {:background-color (rgb [0 255 0])}} "Movement"]
+     [:span {:class "badge-label" :style {:background-color (rgb [255 255 0])}} "Spend"]
+     [:span {:class "badge-label" :style {:background-color (rgb [255 55 0])}} "Damage"]
+     [:span {:class "badge-label" :style {:background-color (rgb [255 125 50])}} "Range"]
+     [:span {:class "badge-label" :style {:background-color (rgb [50 200 255])}} "Shield"]
+     [:span {:class "badge-label" :style {:background-color (rgb [155 255 0])}} "Cost to Buy"]
 
      [:div
       {:style {:font-size "50%"}}

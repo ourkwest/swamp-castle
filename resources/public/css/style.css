@@ -195,3 +195,13 @@ div.trash .tokensvg {
     top: 0;
   }
 }
+
+
+.badge-label {
+    display: inline-block;
+    border-radius: 15px;
+    height: 20px;
+    border: 1px solid rgb(150,150,150);
+    margin: 5px;
+    padding: 4px;
+}
