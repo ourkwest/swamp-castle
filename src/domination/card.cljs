@@ -2,61 +2,11 @@
   (:require [clojure.string :as string]))
 
 
-
-
-(defn hex-points
-  ([r] (hex-points r 0 0))
-  ([r x-off y-off]
-   (string/join " " (for [theta (range 0 (* 2 Math/PI) (/ Math/PI 3))]
-                      (str (+ (* r (Math/sin theta)) x-off)
-                           ","
-                           (+ (* r (Math/cos theta)) y-off))))))
-
-(defn tri-points
-  ([r] (tri-points r 0 0))
-  ([r x-off y-off]
-   (string/join " " (for [theta (range 0 (* 2 Math/PI) (/ (* 2 Math/PI) 3))]
-                      (str (+ x-off (* r (Math/sin theta)))
-                           ","
-                           (- y-off (* r (Math/cos theta))))))))
-
-
 (def width 210)
 (def height 297)
-(def hex-radius 10)
-(def x-step (* (/ (Math/sqrt 3) 2) 2 hex-radius))
-(def y-step (* (/ 3 2) hex-radius))
-
-(def n-x 12)
-(def n-y 17)
-(def y-spare (- height (* (dec n-y) y-step)))
-(def y-start (/ y-spare 2))
-(def x-spare-even (- width (* (dec n-x) x-step)))
-(def x-start-even (/ x-spare-even 2))
-(def x-spare-odd (- width (* (dec (dec n-x)) x-step)))
-(def x-start-odd (/ x-spare-odd 2))
-
-(defn x-pos [x y]
-  (+ (if (even? y) x-start-even x-start-odd)
-     (* x x-step)))
-(defn y-pos [y]
-  (+ y-start
-     (* y y-step)))
-(defn xy-pos [x y]
-  [(x-pos x y) (y-pos y)])
 
 (defn rgb [[r g b]]
   (str "rgb(" r \, g \, b \)))
-
-
-(defn randomise [[x y] r]
-  [(+ x (rand r) (- (/ r 2))) (+ y (rand r) (- (/ r 2)))])
-
-(defn bezier-path [init-char [x1 y1] [x2 y2] [x3 y3] [x4 y4]]
-  (str init-char (int x1) \, (int y1)
-       " C" (int x2) \, (int y2)
-       " " (int x3) \, (int y3)
-       " " (int x4) \, (int y4)))
 
 (defn vect [[xa ya] [xb yb]]
   [(- xb xa) (- yb ya)])
@@ -64,126 +14,110 @@
 (defn scale [[x y] scale]
   [(* x scale) (* y scale)])
 
-(defn plus [[x y] [xx yy]]
-  [(+ x xx) (+ y yy)])
+(defn plus
+  ([[x y] [xx yy]]
+   [(+ x xx) (+ y yy)])
+  ([a b c & more]
+   (apply plus (plus a b) c more)))
 
-(defn interpolate [a b proportion]
-  (plus a (scale (vect a b) proportion)))
+(defn rotate-90 [[x y]]
+  [y (- x)])
 
-
-
-(defn dot [xx yy price [r g b]]
-
-  (let [x (+ (* xx 24) 15)
-        y (+ (* yy 23) 24)
-        qq (if (and (= xx 0) (= yy 11)) 6 0)]
-    [:g
-
-     [:line {:x1 x
-             :y1 y
-             :x2 (+ x 16 qq)
-             :y2 (- y 16 qq)
-             :stroke "black"}]
-
-     ;[:line {:x1 (+ x 10)
-     ;        :y1 (- y 10)
-     ;        :x2 (+ x 20)
-     ;        :y2 (- y 10)
-     ;        :stroke "black"}]
-
-     ;[:path {:d      (str "M" x \, y " l10,-10 l10,0")
-     ;        :fill   :none
-     ;        :stroke :black
-     ;        :style  {:stroke-linecap  :round
-     ;                 :stroke-linejoin :round}}]
-
-     [:circle {:cx           (+ x 16 qq)
-               :cy           (- y 16 qq)
+(defn spot [color [xa ya _] [xb yb price]]
+  (let [price-line :black
+        price-arc :black
+        price-dot (rgb [155 255 0])
+        v1 (vect [xa ya] [xb yb])
+        v2 (rotate-90 v1)
+        [x1 y1] (plus [xa ya]
+                      (scale v1 0.53))
+        [x2 y2] (plus [xa ya]
+                      (scale v1 0.47)
+                      (scale v2 0.06))
+        [x3 y3] (plus [xa ya]
+                      (scale v1 0.47)
+                      (scale v2 -0.06))]
+    [:g {:key (str "spot-" (int xa) \- (int ya))}
+     [:line {:x1     xa
+             :y1     ya
+             :x2     xb
+             :y2     yb
+             :stroke price-line}]
+     [:line {:x1     x1
+             :y1     y1
+             :x2     x2
+             :y2     y2
+             :stroke price-line
+             :stroke-linecap "round"}]
+     [:line {:x1     x1
+             :y1     y1
+             :x2     x3
+             :y2     y3
+             :stroke price-line
+             :stroke-linecap "round"}]
+     [:line {:x1     x2
+             :y1     y2
+             :x2     x3
+             :y2     y3
+             :stroke price-line
+             :stroke-linecap "round"}]
+     [:circle {:cx           xa
+               :cy           ya
                :r            5
-               :stroke       :black
+               :stroke       price-arc
                :stroke-width 0.5
-               :fill :white}]
-
-     [:circle {:cx           x
-               :cy           y
+               :fill         price-dot}]
+     [:circle {:cx           xb
+               :cy           yb
                :r            11
                :stroke       :black
                :stroke-width 0.5
-               :fill         (rgb [r g b])}]
-
-     [:circle {:cx           x
-               :cy           y
+               :fill         (rgb color)}]
+     [:circle {:cx           xb
+               :cy           yb
                :r            11
                :stroke       :black
                :stroke-width 0.5
                :fill         "url(#grad)"}]
-
-     [:text {:x           (+ x 16 qq)
-             :y           (- y 13.7 qq)
+     [:text {:x           xa
+             :y           (+ ya 2)
              :text-anchor "middle"
              :style       {:font-size "6px"}}
-      price]])
-  )
+      price]]))
 
+(defn spots [color data]
+  [:g
+   (for [[a b] (partition 2 1 data)]
+     (spot color a b))])
 
 (defn render-card []
 
-  [:h1 "Card?"]
-
   [:svg {:id "section-to-print"
-         :style    {
-                    :width  "100%"
-                    ;:height "100%"
-                    ;:border "1px solid black"
-                    }
+         :style    {:width  "100%"}
          :view-box (string/join " " [0 0 width height])}
 
    [:defs
-
     [:radialGradient {:id "grad" :fx 0.5 :fy 0.5 :r 1}
      [:stop {:stop-color "white" :stop-opacity 1 :offset "0%"}]
-     [:stop {:stop-color "white" :stop-opacity 1 :offset "40%"}]
+     [:stop {:stop-color "white" :stop-opacity 1 :offset "35%"}]
      [:stop {:stop-color "white" :stop-opacity 0 :offset "50%"}]
-     [:stop {:stop-color "white" :stop-opacity 0 :offset "100%"}]]
+     [:stop {:stop-color "white" :stop-opacity 0 :offset "100%"}]]]
 
-    [:filter {:id "Blur2"
-              }
-     [:feGaussianBlur {:in "SourceGraphic" :stdDeviation "1"}]]
+   (let [shield-prices (concat [0 1 1 1 1] (range 2 32))
+         shield-xs (concat (reverse (take 6 (drop 1 (range 36 999 24))))
+                           (take 23 (interleave (repeat 36) (repeat 15)))
+                           (drop 1 (range 36 999 24)))
+         shield-ys (concat (repeat 6 15)
+                           (range 15 290 12)
+                           (repeat 279))
+         shield-color [50 150 205]]
+     (spots shield-color (map vector shield-xs shield-ys shield-prices)))
 
-    ]
-
-
-   (let [shield-prices [1 1 1 2 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21]
-         prices-a (take 12 shield-prices)
-         prices-b (take 7 (drop 12 shield-prices))]
+   (let [minion-prices [0 1 2 4 8 16]
+         minion-xs (reverse (take 6 (drop 1 (range 46 999 24))))
+         minion-ys (range 15 279 (/ (- 279 15) 5))]
      [:g
-      (for [[idx price] (map-indexed vector prices-a)]
-        (dot 0 idx price [50 100 255]))
-      (for [[idx price] (map-indexed vector prices-b)]
-        (dot (inc idx) 11 price [50 100 255]))])
-
-   [:g
-    (for [[idx price] (map-indexed vector [1 2 4 8 16])]
-      [:g
-       (dot (+ 2 idx) 2 price [255 0 0])
-       (dot (+ 2 idx) 4 price [0 255 0])
-       (dot (+ 2 idx) 6 price [0 0 255])
-       (dot (+ 2 idx) 8 price [255 255 0])
-       ])]
-
-   (for [y (range n-y)
-         x (range (if (even? y) n-x (dec n-x)))]
-     [:use {:key       (str x "-" y)
-            :x         (x-pos x y)
-            :y         (y-pos y)
-            :xlinkHref "#Hex"}])
-
-   (for [y (range n-y)
-         x (range (if (even? y) n-x (dec n-x)))]
-     [:use {:key       (str x "-" y)
-            :x         (x-pos x y)
-            :y         (y-pos y)
-            :xlinkHref "#Hex2"}])
-
-
-   ])
+      (spots [255 0 0] (map vector minion-xs (repeat (nth minion-ys 1)) minion-prices))
+      (spots [0 255 0] (map vector minion-xs (repeat (nth minion-ys 2)) minion-prices))
+      (spots [0 0 255] (map vector minion-xs (repeat (nth minion-ys 3)) minion-prices))
+      (spots [255 255 0] (map vector minion-xs (repeat (nth minion-ys 4)) minion-prices))])])

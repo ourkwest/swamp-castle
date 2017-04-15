@@ -54,8 +54,7 @@
   (let [x-loc (x-pos x (int y))
         y-loc (y-pos y)]
     [:g {:id        (str "Wall-" x "-" y)
-         :transform (str "rotate(" theta "," x-loc "," y-loc ")")
-         }
+         :transform (str "rotate(" theta "," x-loc "," y-loc ")")}
      [:rect {:style  {:fill         (rgb [150 125 100])
                       :stroke       (rgb [100 100 100])
                       :stroke-width 1}
@@ -517,7 +516,3 @@
    ;(tree 3 11)
 
    ])
-
-; TODO:
-; knock a few rows and columns off the size
-; move midden past the river
