@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="css/style.css" rel="stylesheet" type="text/css">
+    <script>
+
+      function addLink(name, image) {
+      var aLink = document.createElement('a');
+      aLink.download = name + '.png';
+      aLink.innerText = name + '.png';
+      aLink.href = image;
+      document.getElementById('holder').appendChild(aLink);
+      }
+
+      function draw() {
+
+      var canvas = document.getElementById('cnv'), ctx = canvas.getContext('2d');
+      var width = 200, height = 200;
+
+      ctx.fillStyle = 'rgb(0,0,0)';
+      ctx.fillRect(0,0,width, height);
+
+      ctx.strokeStyle = 'rgb(200,200,200)';
+      ctx.beginPath();
+      ctx.arc(100,100,85,0,2*Math.PI);
+      ctx.stroke();
+
+
+      addLink("image1", canvas.toDataURL());
+
+      }
+
+
+    </script>
+  </head>
+  <body onload="draw()">
+    <div id="tokens">
+      <h2>Loading...</h2>
+      <p>Checkout your developer console if nothing happens.</p>
+    </div>
+    <script src="js/compiled/domination.js" type="text/javascript"></script>
+
+
+  <!--<canvas id="cnv" width="200" height="200"></canvas>-->
+<!---->
+  <!--<div id="holder"></div>-->
+
+  </body>
+</html>

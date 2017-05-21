@@ -5,6 +5,8 @@
 (def width 210)
 (def height 297)
 
+(def TAU (* 2.0 Math/PI))
+
 (defn rgb [[r g b]]
   (str "rgb(" r \, g \, b \)))
 
@@ -23,7 +25,8 @@
 (defn rotate-90 [[x y]]
   [y (- x)])
 
-(defn spot [color [xa ya _] [xb yb price]]
+
+(defn spot-price [color [xa ya _] [xb yb price]]
   (let [price-line :black
         price-arc :black
         price-dot (rgb [155 255 0])
@@ -40,26 +43,26 @@
     [:g {:key (str "spot-" (int xa) \- (int ya))}
      [:line {:x1     xa
              :y1     ya
-             :x2     xb
-             :y2     yb
+             :x2     x1
+             :y2     y1
              :stroke price-line}]
-     [:line {:x1     x1
-             :y1     y1
-             :x2     x2
-             :y2     y2
-             :stroke price-line
+     [:line {:x1             x1
+             :y1             y1
+             :x2             x2
+             :y2             y2
+             :stroke         price-line
              :stroke-linecap "round"}]
-     [:line {:x1     x1
-             :y1     y1
-             :x2     x3
-             :y2     y3
-             :stroke price-line
+     [:line {:x1             x1
+             :y1             y1
+             :x2             x3
+             :y2             y3
+             :stroke         price-line
              :stroke-linecap "round"}]
-     [:line {:x1     x2
-             :y1     y2
-             :x2     x3
-             :y2     y3
-             :stroke price-line
+     [:line {:x1             x2
+             :y1             y2
+             :x2             x3
+             :y2             y3
+             :stroke         price-line
              :stroke-linecap "round"}]
      [:circle {:cx           xa
                :cy           ya
@@ -67,28 +70,36 @@
                :stroke       price-arc
                :stroke-width 0.5
                :fill         price-dot}]
-     [:circle {:cx           xb
-               :cy           yb
-               :r            11
-               :stroke       :black
-               :stroke-width 0.5
-               :fill         (rgb color)}]
-     [:circle {:cx           xb
-               :cy           yb
-               :r            11
-               :stroke       :black
-               :stroke-width 0.5
-               :fill         "url(#grad)"}]
      [:text {:x           xa
              :y           (+ ya 2)
              :text-anchor "middle"
              :style       {:font-size "6px"}}
       price]]))
 
-(defn spots [color data]
+(defn spot-place [color [xa ya _] [xb yb price]]
+  [:g
+   [:circle {:cx           xb
+             :cy           yb
+             :r            11
+             :stroke       :black
+             :stroke-width 0.5
+             :fill         (rgb color)}]
+   [:circle {:cx           xb
+             :cy           yb
+             :r            11
+             :stroke       :black
+             :stroke-width 0.5
+             :fill         "url(#grad)"}]])
+
+(defn spot [color [xa ya _] [xb yb price] [place? price?]]
+  [:g
+   (when place? (spot-place color [xa ya _] [xb yb price]))
+   (when price? (spot-price color [xa ya _] [xb yb price]))])
+
+(defn spots [color data [place? price?]]
   [:g
    (for [[a b] (partition 2 1 data)]
-     (spot color a b))])
+     (spot color a b [place? price?]))])
 
 (defn render-card []
 
@@ -103,21 +114,83 @@
      [:stop {:stop-color "white" :stop-opacity 0 :offset "50%"}]
      [:stop {:stop-color "white" :stop-opacity 0 :offset "100%"}]]]
 
-   (let [shield-prices (concat [0 1 1 1 1] (range 2 32))
-         shield-xs (concat (reverse (take 6 (drop 1 (range 36 999 24))))
-                           (take 23 (interleave (repeat 36) (repeat 15)))
-                           (drop 1 (range 36 999 24)))
-         shield-ys (concat (repeat 6 15)
-                           (range 15 290 12)
-                           (repeat 279))
-         shield-color [50 150 205]]
-     (spots shield-color (map vector shield-xs shield-ys shield-prices)))
+   [:rect {:x      (+ 4.5 (* 0 21))
+           :y      2
+           :width  (+ (* 4 (+ 21 25)) 4)
+           :height (- height 10)
+           :style  {:fill             (rgb [140 140 140])
+                    :stroke           (rgb [100 100 100])
+                    :stroke-width     0.6
+                    :stroke-dasharray "2,0.2"}}]
+   [:rect {:x      (+ 4.5 (* 1 21))
+           :y      20
+           :width  (+ (* 3 (+ 21 25)) 4)
+           :height (- height 30)
+           :style  {:fill             (rgb [180 180 180])
+                    :stroke           (rgb [100 100 100])
+                    :stroke-width     0.6
+                    :stroke-dasharray "2,0.2"}}]
+   [:rect {:x      (+ 4.5 (* 2 21))
+           :y      38
+           :width  (+ (* 2 (+ 21 25)) 4)
+           :height (- height 50)
+           :style  {:fill             (rgb [220 220 220])
+                    :stroke           (rgb [100 100 100])
+                    :stroke-width     0.6
+                    :stroke-dasharray "2,0.2"}}]
 
-   (let [minion-prices [0 1 2 4 8 16]
-         minion-xs (reverse (take 6 (drop 1 (range 46 999 24))))
-         minion-ys (range 15 279 (/ (- 279 15) 5))]
+   [:text {:x           (+ 4.5 (* 4 21) 2)
+           :y           50
+           :text-anchor "middle"
+           :style       {:font-size "10px"}}
+    "2 Players"]
+
+   [:text {:x           (+ 4.5 (* 4 21) 2)
+           :y           32
+           :text-anchor "middle"
+           :style       {:font-size "10px"}}
+    "3 Players"]
+
+   [:text {:x           (+ 4.5 (* 4 21) 2)
+           :y           14
+           :text-anchor "middle"
+           :style       {:font-size "10px"}}
+    "4 Players"]
+
+
+   (let [shield-prices (range 0 17)
+
+         shield-xs (interleave (repeat 36) (repeat 15))
+         shield-ys (range 60 290 12)
+
+         shield-color [50 150 205]]
      [:g
-      (spots [255 0 0] (map vector minion-xs (repeat (nth minion-ys 1)) minion-prices))
-      (spots [0 255 0] (map vector minion-xs (repeat (nth minion-ys 2)) minion-prices))
-      (spots [0 0 255] (map vector minion-xs (repeat (nth minion-ys 3)) minion-prices))
-      (spots [255 255 0] (map vector minion-xs (repeat (nth minion-ys 4)) minion-prices))])])
+      (spots shield-color (map vector shield-xs shield-ys shield-prices) [1 nil])
+      (spots shield-color (map vector (map #(+ 21 %) (drop 1 shield-xs)) shield-ys shield-prices) [1 nil])
+      (spots shield-color (map vector (map #(+ 42 %) shield-xs) shield-ys shield-prices) [1 nil])
+
+      (spots shield-color (map vector shield-xs shield-ys shield-prices) [nil 1])
+      (spots shield-color (map vector (map #(+ 21 %) (drop 1 shield-xs)) shield-ys shield-prices) [nil 1])
+      (spots shield-color (map vector (map #(+ 42 %) shield-xs) shield-ys shield-prices) [nil 1])
+      ])
+
+
+   (let [minion-prices [0 1 2 4 6 8]
+         start-x (iterate #(+ 25 %) 105)
+         start-y 60
+         angle (/ TAU 4)
+         step-size 24
+         x-step (* (Math/cos angle) step-size)
+         y-step (* (Math/sin angle) step-size)
+         minion-xs (map (partial iterate #(+ x-step %)) start-x)
+         minion-ys (iterate #(+ y-step %) start-y)
+         ]
+     [:g
+      (spots [255 0 0] (map vector (nth minion-xs 0) minion-ys minion-prices) [1 1])
+      (spots [0 255 0] (map vector (nth minion-xs 1) minion-ys minion-prices) [1 1])
+      (spots [0 0 255] (map vector (nth minion-xs 2) minion-ys minion-prices) [1 1])
+      (spots [255 255 0] (map vector (nth minion-xs 3) minion-ys minion-prices) [1 1])])
+
+
+
+   ])
