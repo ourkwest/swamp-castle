@@ -87,7 +87,7 @@
       [:li "Draw 4 " tokens " from your draw " bag " into your hand."]
       [:li "Perform up to 1 " minion " action per " minion "."]
       [:li "Buy some " tokens ", " shields " or " minions "."]
-      [:li "Place all played and unplayed " tokens " from your hand and all newly purchased " tokens " in your discard " bag "."]]
+      [:li "Place all played and unplayed " tokens " from your hand and all newly purchased " tokens " into your discard " bag "."]]
 
      [:h3 "Drawing"]
 
@@ -134,21 +134,21 @@
 
       (cons [:li "Midden - sacrifice one unplayed " token " from your hand."]
             (for [c characters]
-              (let [desc (string/join " "
-                           [(:desc c)
-                            (condp = (:move c)
-                              nil nil
-                              1 (str "You may move this " minion " to an adjacent hex.")
-                              (str "You may move this " minion " up to " (:move c) " hexes."))
-                            (when (:coin c) (str "You have " (:coin c) " more to spend at turn's end."))
-                            (when (:shield c) (str "You may take the next " shield " from the piece card."))
-                            (when (:damage c)
-                              (if (:range c)
-                                (str "You may attack one other " minion " up to " (:range c) " hexes away "
-                                     "with " (:damage c) " damage points.")
-                                (str "You may attack one other " minion " on an adjacent hex "
-                                     "with " (:damage c) " damage points.")))
-                            ])]
+              (let [desc [:span
+                          (or (:desc c) "")
+                          (condp = (:move c)
+                            nil ""
+                            1 [:span "You may move this " minion " to an adjacent hex."]
+                            [:span "You may move this " minion " up to " (:move c) " hexes."])
+                          (when (:coin c) [:span "You have " (:coin c) " more to spend at turn's end."])
+                          (when (:shield c) [:span "You may take the next " shield " from the piece card."])
+                          (when (:damage c)
+                            (if (:range c)
+                              [:span "You may attack one other " minion " up to " (:range c) " hexes away "
+                               "with " (:damage c) " damage points."]
+                              [:span "You may attack one other " minion " on an adjacent hex "
+                               "with " (:damage c) " damage points."]))
+                          ]]
                 [:li (:label c) " - " desc])))
 
       ]

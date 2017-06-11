@@ -95,19 +95,24 @@
             (circle (/ width 2) (/ height 2) (* width 0.35) colour 2 [0 0 0]))
 
           (if money?
-            (text ctx (/ width 2) (+ (/ height 2) 120) (/ width 1.4) coin [0 0 0 0.5] 5 [0 0 0])
+            (text ctx (/ width 2) (+ (/ height 2) 35 (* coin 5)) (/ width (- 6 (/ coin 1.25)))
+                  (condp = coin
+                    1 "Bronze"
+                    2 "Silver"
+                    "Gold")
+                  [0 0 0 0.5] 5 [0 0 0])
             (do
 
               (text ctx (/ width 2) (+ (/ height 2) 90) (/ width 1.4) "♟" [0 0 0 0.2] 5 [0 0 0 0.4])
 
-              (let [badge-v 90
-                    badge-h 60
-                    mid (/ width 2)]
-                (when move (badge ctx [0 255 0] move (if coin (- mid badge-h) mid) (- mid badge-v)))
-                (when coin (badge ctx [255 255 0] coin (if move (+ mid badge-h) mid) (- mid badge-v)))
-                (when damage (badge ctx [255 55 0] damage (if range (- mid badge-h) mid) (+ mid badge-v)))
-                (when range (badge ctx [255 125 50] range (if damage (+ mid badge-h) mid) (+ mid badge-v)))
-                (when shield (badge ctx [50 200 255] shield mid (+ mid badge-v))))
+              ;(let [badge-v 90
+              ;      badge-h 60
+              ;      mid (/ width 2)]
+              ;  (when move (badge ctx [0 255 0] move (if coin (- mid badge-h) mid) (- mid badge-v)))
+              ;  (when coin (badge ctx [255 255 0] coin (if move (+ mid badge-h) mid) (- mid badge-v)))
+              ;  (when damage (badge ctx [255 55 0] damage (if range (- mid badge-h) mid) (+ mid badge-v)))
+              ;  (when range (badge ctx [255 125 50] range (if damage (+ mid badge-h) mid) (+ mid badge-v)))
+              ;  (when shield (badge ctx [50 200 255] shield mid (+ mid badge-v))))
 
 
               (if (= label "Chocolate Cake")

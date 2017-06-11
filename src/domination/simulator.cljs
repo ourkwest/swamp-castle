@@ -7,7 +7,7 @@
 
 
 
-(def iteration 13)
+(def iteration 14)
 
 (defn refocus-soon []
   (js/setTimeout #(.focus (dom/getElement "mounteddiv")) 200))
@@ -125,7 +125,7 @@
 
 (def coin-a (make-money 1 0))
 (def coin-b (make-money 2 4))
-(def coin-c (make-money 3 8))
+(def coin-c (make-money 4 8))
 
 (defn character [label move damage coin shield range price colour desc]
   {:label label
@@ -142,15 +142,15 @@
   [
    ;                            Move  Dmg.  Coin  Shield Range Price Color Description
 
-   (character "Farmer"          1     nil   2     nil    nil   1     nil   nil)
-   (character "Horse Rider"     3     nil   nil   nil    nil   2     nil   nil)
-   (character "Brigand"         2     1     1     nil    nil   3     nil   nil)
-   (character "Archer"          3     1     nil   nil    3     5     nil   nil)
-   (character "Blacksmith"      nil   nil   nil   1      nil   6     nil   nil)
-   (character "Bezerker"        3     3     nil   nil    nil   7     nil   nil)
-   (character "Assassin"        2     2     2     nil    nil   8     nil   nil)
+   (character "Farmer"          1     nil   2     nil    nil   1     [194 232 112]   nil)
+   (character "Horse Rider"     3     nil   nil   nil    nil   2     [232 175 116]   nil)
+   (character "Brigand"         2     1     1     nil    nil   3     [107, 211, 140]   nil)
+   (character "Archer"          3     1     nil   nil    3     5     [255, 163, 71]   nil)
+   (character "Blacksmith"      nil   nil   nil   1      nil   6     [130, 134, 255]   nil)
+   (character "Bezerker"        3     3     nil   nil    nil   7     [255, 73, 73]   nil)
+   (character "Assassin"        2     2     2     nil    nil   8     [150, 107, 196]   nil)
    (character "Chocolate Cake"  nil   nil   nil   nil    nil   10    [255 50 200] "Sacrifice this token and minion for a Victory Point. Your minion must be on a 'Cake' hex to perform this action.")
-   (character "Knight"          4     4     nil   nil    nil   12    nil   nil)
+   (character "Knight"          4     4     nil   nil    nil   12    [0 255 255]   nil)
    ])
 
 
