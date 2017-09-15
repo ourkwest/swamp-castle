@@ -198,9 +198,10 @@ div.trash .tokensvg {
 
 
 .badge-label {
+    font-size: 35pt;
     display: inline-block;
     border-radius: 15px;
-    height: 20px;
+    //height: 20px;
     border: 1px solid rgb(150,150,150);
     margin: 5px;
     padding: 4px;

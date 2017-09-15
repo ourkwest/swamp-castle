@@ -103,7 +103,7 @@
       (let [affordable? true ;(<= price max-price)
             ]
         [:g
-         [:circle {:style {:fill (if affordable? (rgb [155 255 0]) (rgb [55 55 55]))}
+         [:circle {:style {:fill (if affordable? (rgb [200 100 150]) (rgb [55 55 55]))}
                    :cx    85
                    :cy    85
                    :r     15}]
@@ -128,29 +128,49 @@
 (def coin-c (make-money 4 8))
 
 (defn character [label move damage coin shield range price colour desc]
-  {:label label
-   :move move
-   :damage damage
-   :shield shield
-   :coin coin
-   :range range
-   :price price
-   :colour (or colour [150 200 255])
-   :desc desc})
+  (if (and coin price
+           (not (or move damage shield range)))
+    (make-money coin price)
+    {:label  label
+     :move   move
+     :damage damage
+     :shield shield
+     :coin   coin
+     :range  range
+     :price  price
+     :colour (or colour [150 200 255])
+     :desc   desc}))
 
 (def characters
   [
    ;                            Move  Dmg.  Coin  Shield Range Price Color Description
 
-   (character "Farmer"          1     nil   2     nil    nil   1     [194 232 112]   nil)
-   (character "Horse Rider"     3     nil   nil   nil    nil   2     [232 175 116]   nil)
-   (character "Brigand"         2     1     1     nil    nil   3     [107, 211, 140]   nil)
-   (character "Archer"          3     1     nil   nil    3     5     [255, 163, 71]   nil)
-   (character "Blacksmith"      nil   nil   nil   1      nil   6     [130, 134, 255]   nil)
-   (character "Bezerker"        3     3     nil   nil    nil   7     [255, 73, 73]   nil)
-   (character "Assassin"        2     2     2     nil    nil   8     [150, 107, 196]   nil)
-   (character "Chocolate Cake"  nil   nil   nil   nil    nil   10    [255 50 200] "Sacrifice this token and minion for a Victory Point. Your minion must be on a 'Cake' hex to perform this action.")
-   (character "Knight"          4     4     nil   nil    nil   12    [0 255 255]   nil)
+   (character "Bronze"          nil   nil   1     nil    nil   0     nil   nil)
+   (character "Silver"          nil   nil   2     nil    nil   4     nil   nil)
+   (character "Gold"            nil   nil   3     nil    nil   7     nil   nil)
+
+   ;(character "Brigand"         2     1     1     nil    nil   3     [107, 211, 140]   nil)
+   ;(character "Bezerker"        3     3     nil   nil    nil   7     [255, 73, 73]   nil)
+   ;(character "Assassin"        2     2     2     nil    nil   8     [150, 107, 196]   nil)
+
+
+   (character "Farmer"          2     nil   2     nil    nil   1     [194 232 112]   nil) ;TODO "Merchant"? if re-printing tokens
+   (character "Horse Rider"     4     1     nil   nil    nil   2     [232 175 116]   nil)
+   (character "Archer"          2     2     nil   nil    3     3     [255, 163, 71]   nil)
+   (character "Blacksmith"      nil   nil   nil   1      nil   5     [130, 134, 255]   nil)
+   (character "Chocolate Cake"  nil   nil   nil   nil    nil   6     [255 50 200] "Sacrifice this token and minion for a Victory Point. Your minion must be on a 'Cake' hex to perform this action.")
+   (character "Knight"          4     3     nil   nil    nil   8     [0 255 255]   nil)
+
+
+   ;(character "Farmer"          1     nil   2     nil    nil   1     [194 232 112]   nil)
+   ;(character "Horse Rider"     3     nil   nil   nil    nil   2     [232 175 116]   nil)
+   ;(character "Brigand"         2     1     1     nil    nil   3     [107, 211, 140]   nil)
+   ;(character "Archer"          3     1     nil   nil    3     5     [255, 163, 71]   nil)
+   ;(character "Blacksmith"      nil   nil   nil   1      nil   6     [130, 134, 255]   nil)
+   ;(character "Bezerker"        3     3     nil   nil    nil   7     [255, 73, 73]   nil)
+   ;(character "Assassin"        2     2     2     nil    nil   8     [150, 107, 196]   nil)
+   ;(character "Chocolate Cake"  nil   nil   nil   nil    nil   10    [255 50 200] "Sacrifice this token and minion for a Victory Point. Your minion must be on a 'Cake' hex to perform this action.")
+   ;(character "Knight"          4     4     nil   nil    nil   12    [0 255 255]   nil)
    ])
 
 
@@ -163,7 +183,7 @@
                                      :log        '()
 
                                      :hand-no    0
-                                     :draw       (shuffle [coin-a coin-a coin-a coin-a])
+                                     :draw       (vec (repeat 4 (first characters)))
                                      :hand       []
                                      :played     []
                                      :discard    []
@@ -342,7 +362,7 @@
       [:div {:class "sectionback"}]
       [:div {:class "sectionlabel"}
        "Buy"]
-      (for [[index item] (map-indexed vector (sort-by :price (concat characters [coin-a coin-b coin-c])))]
+      (for [[index item] (map-indexed vector (sort-by :price characters))]
         (buy-button item to-spend index))]
 
      [:input {:type :button
@@ -356,7 +376,7 @@
      [:span {:class "badge-label" :style {:background-color (rgb [255 55 0])}} "Damage"]
      [:span {:class "badge-label" :style {:background-color (rgb [255 125 50])}} "Range"]
      [:span {:class "badge-label" :style {:background-color (rgb [50 200 255])}} "Shield"]
-     [:span {:class "badge-label" :style {:background-color (rgb [155 255 0])}} "Cost to Buy"]
+     [:span {:class "badge-label" :style {:background-color (rgb [200 100 150])}} "Cost to Buy"]
 
      [:div
       {:style {:font-size "50%"}}

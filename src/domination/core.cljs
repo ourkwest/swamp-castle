@@ -7,6 +7,7 @@
             [domination.board :as board]
             [domination.card :as card]
             [domination.tokens :as tokens]
+            [domination.reference :as reference]
             [domination.instructions :as rules]))
 
 (enable-console-print!)
@@ -36,6 +37,9 @@
 
 (when-let [element (. js/document (getElementById "tokens"))]
   (reagent/render-component [tokens/render-tokens] element))
+
+(when-let [element (. js/document (getElementById "reference"))]
+  (reagent/render-component [reference/render-tokens] element))
 
 
 (defn on-js-reload []
