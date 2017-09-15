@@ -7,7 +7,7 @@
 
 
 
-(def iteration 14)
+(def iteration 15)
 
 (defn refocus-soon []
   (js/setTimeout #(.focus (dom/getElement "mounteddiv")) 200))
@@ -176,7 +176,7 @@
 
 (defonce state-history (atom '()))
 
-(defonce app-state (add-watch (atom {:text       "Knights of Bog Castle"
+(defonce app-state (add-watch (atom {:text       "Knights of Sambocade Castle"
                                      :colour     "rgb(200,200,200)"
                                      :hand-size  4
                                      :trash-mode false

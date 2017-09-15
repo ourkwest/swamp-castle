@@ -7,6 +7,7 @@
             [domination.board :as board]
             [domination.card :as card]
             [domination.tokens :as tokens]
+            [domination.printable :as printable]
             [domination.reference :as reference]
             [domination.instructions :as rules]))
 
@@ -37,6 +38,9 @@
 
 (when-let [element (. js/document (getElementById "tokens"))]
   (reagent/render-component [tokens/render-tokens] element))
+
+(when-let [element (. js/document (getElementById "printable"))]
+  (reagent/render-component [printable/render-tokens] element))
 
 (when-let [element (. js/document (getElementById "reference"))]
   (reagent/render-component [reference/render-tokens] element))

@@ -1,4 +1,4 @@
-(ns domination.reference
+(ns domination.printable
   (:require [clojure.string :as string]
             [domination.simulator :as sim]))
 
