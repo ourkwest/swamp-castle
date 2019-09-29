@@ -116,21 +116,17 @@
           (str price)]]))]))
 
 (def max-coins 4)
-(defn make-money [amount price]
-  {:label  (if (= 1 amount) "1 Coin" (str amount " Coins"))
+(defn make-money [label amount price]
+  {:label  (or label (if (= 1 amount) "1 Coin" (str amount " Coins")))
    :colour [255 255 (int (* 255 (- 1 (/ amount max-coins))))]
    :coin   amount
    :money? true
    :price  price})
 
-(def coin-a (make-money 1 0))
-(def coin-b (make-money 2 4))
-(def coin-c (make-money 4 8))
-
 (defn character [label move damage coin shield range price colour desc]
   (if (and coin price
            (not (or move damage shield range)))
-    (make-money coin price)
+    (make-money label coin price)
     {:label  label
      :move   move
      :damage damage

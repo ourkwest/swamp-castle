@@ -132,24 +132,24 @@
 
      [:ul
 
-      (cons [:li "Midden - sacrifice one unplayed " token " from your hand."]
+      (cons [:li [:b "Midden"] " - sacrifice one unplayed " token " from your hand."]
             (for [c characters]
               (let [desc [:span
                           (or (:desc c) "")
                           (condp = (:move c)
                             nil ""
-                            1 [:span "You may move this " minion " to an adjacent hex."]
-                            [:span "You may move this " minion " up to " (:move c) " hexes."])
-                          (when (:coin c) [:span "You have " (:coin c) " more to spend at turn's end."])
-                          (when (:shield c) [:span "You may take the next " shield " from the piece card."])
+                            1 [:span "You may move this " minion " to an adjacent hex. "]
+                            [:span "You may move this " minion " up to " [:b (:move c) " hexes"] ". "])
+                          (when (:coin c) [:span "You have " [:b (:coin c)] " more to spend at turn's end. "])
+                          (when (:shield c) [:span "You may take the next " shield " from the piece card. "])
                           (when (:damage c)
                             (if (:range c)
-                              [:span "You may attack one other " minion " up to " (:range c) " hexes away "
-                               "with " (:damage c) " damage points."]
+                              [:span "You may attack one other " minion " up to " [:b (:range c) " hexes"] " away "
+                               "with " [:b (:damage c)] " damage points."]
                               [:span "You may attack one other " minion " on an adjacent hex "
-                               "with " (:damage c) " damage points."]))
+                               "with " [:b (:damage c)] " damage points."]))
                           ]]
-                [:li (:label c) " - " desc])))
+                [:li [:b (:label c)] " - " desc])))
 
       ]
 

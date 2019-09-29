@@ -72,9 +72,10 @@
 
   (js/setTimeout
     #(doseq [{:keys [move damage range coin shield label colour money?]} (concat sim/characters
-                                                                                     [sim/coin-a
-                                                                                      sim/coin-b
-                                                                                      sim/coin-c])]
+                                                                                     ;[sim/coin-a
+                                                                                     ; sim/coin-b
+                                                                                     ; sim/coin-c]
+                                                                                 )]
 
       (let [canvas (.createElement js/document "canvas")
             link (.createElement js/document "a")
