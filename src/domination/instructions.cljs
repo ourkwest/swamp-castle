@@ -16,35 +16,27 @@
 ;
 ;
 
-(def minion [:b "Minion"])
-(def minions [:b "Minions"])
-
-(def shield [:b "Shield"])
-(def shields [:b "Shields"])
-
-(def vp [:b "Victory Point"])
-(def vps [:b "Victory Points"])
-
-(def token [:b "Token"])
-(def tokens [:b "Tokens"])
-
-(def bag [:b "Bag"])
-(def bags [:b "Bags"])
-
-(def cake [:b "Chocolate Cake"])
-
-(def midden [:b "Midden"])
-
-(def bronze [:b "Bronze"])
-
-(def sacrifice [:b "Sacrifice"])
-(def sacrificed [:b "Sacrificed"])
+(def minion [:span.special.minion "Minion"])
+(def minions [:span.special.minion "Minions"])
+(def shield [:span.special.shield "Shield"])
+(def shields [:span.special.shield "Shields"])
+(def vp [:span.special.vp "Victory Point"])
+(def vps [:span.special.vp "Victory Points"])
+(def token [:span.special.token "Token"])
+(def tokens [:span.special.token "Tokens"])
+(def bag [:span.special.bag "Bag"])
+(def bags [:span.special.bag "Bags"])
+(def cake [:span.special.cake "Chocolate Cake"])
+(def midden [:span.special.midden "Midden"])
+(def bronze [:span.special.bronze "Bronze"])
+(def sacrifice [:span.special.sacrifice "Sacrifice"])
+(def sacrificed [:span.special.sacrifice "Sacrificed"])
 
 (defn render-card []
 
-  [:div [:h1 "Cake Walk"]
+  [:div [:h1.center "Cake Walk"]
 
-   [:div "A game of strategic cake-based seduction for 2-4 players."]
+   [:div.center "A game of strategic cake-based seduction for 2-4 players."]
 
    [:div [:h2 "Work in Progress"]
     [:p
@@ -52,7 +44,7 @@
      "You will need to print out the board, the piece card and as many copies of the rules as you require. "
      "You will also need 5 playing pieces (\"" minions "\") per player (in the player's colour) and a large supply "
      "(20 should suffice) of shield pieces (\"" shields "\"). "
-     "You will also need many coloured tokens and bags to put them in (or cards to shuffle)."
+     "You will also need many coloured " tokens " and " bags " to put them in (or cards to shuffle)."
      ]]
 
    [:div [:h2 "Setting"]
@@ -131,7 +123,7 @@
              (for [c characters]
                (let [desc [:span
                            (when (= "Chocolate Cake" (:label c))
-                             [:span sacrifice " this " token " and " minion " for a Victory Point. Your " minion " must be on a 'Cake' hex to perform this action."])
+                             [:span sacrifice " this " token " and " minion " for a " vp ". Your " minion " must be on a 'Cake' hex to perform this action."])
                            (condp = (:move c)
                              nil ""
                              1 [:span "You may move this " minion " to an adjacent hex. "]
