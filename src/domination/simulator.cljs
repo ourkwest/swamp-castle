@@ -153,8 +153,8 @@
    (character "Farmer"          2     nil   2     nil    nil   1     [194 232 112]   nil) ;TODO "Merchant"? if re-printing tokens
    (character "Horse Rider"     4     1     nil   nil    nil   2     [232 175 116]   nil)
    (character "Archer"          2     2     nil   nil    3     3     [255, 163, 71]   nil)
-   (character "Blacksmith"      nil   nil   nil   1      nil   5     [130, 134, 255]   nil)
-   (character "Chocolate Cake"  nil   nil   nil   nil    nil   6     [255 50 200] "Sacrifice this token and minion for a Victory Point. Your minion must be on a 'Cake' hex to perform this action.")
+   (character "Chocolate Cake"  nil   nil   nil   nil    nil   5     [255 50 200] "Sacrifice this token and minion for a Victory Point. Your minion must be on a 'Cake' hex to perform this action.")
+   (character "Blacksmith"      nil   nil   nil   2      nil   6     [130, 134, 255]   nil)
    (character "Knight"          4     3     nil   nil    nil   8     [0 255 255]   nil)
 
 

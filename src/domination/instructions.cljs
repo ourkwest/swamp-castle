@@ -36,7 +36,7 @@
 
   [:div [:h1.center "Cake Walk"]
 
-   [:div.center "A game of strategic cake-based seduction for 2-4 players."]
+   [:div.center "A deck-building game of strategic warfare and cake-based seduction for 2-4 players."]
 
    [:div [:h2 "Work in Progress"]
     [:p
@@ -72,6 +72,7 @@
 
    [:div [:h2 "Playing the Game"]
     [:p "The player who has brought the most baked goods to the table plays first. "]
+    [:p "There are two types of " token ": money " tokens " and action " tokens "."] ; TODO: explain this, explain that money gets kept in discard pile
     [:p "Players take it in turns to play as follows:"]
     [:ol
      [:li "Draw 4 " tokens " from your draw " bag " into your hand."]
