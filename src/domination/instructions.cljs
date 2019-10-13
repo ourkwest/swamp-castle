@@ -4,18 +4,6 @@
     [clojure.string :as string]))
 
 
-
-
-; Rules
-
-
-; Setting "Knights of ..."
-
-
-; Aim of the Game
-;
-;
-
 (def minion [:span.special.minion "Minion"])
 (def minions [:span.special.minion "Minions"])
 (def shield [:span.special.shield "Shield"])
@@ -44,7 +32,7 @@
      "You will need to print out the board, the piece card and as many copies of the rules as you require. "
      "You will also need 5 playing pieces (\"" minions "\") per player (in the player's colour) and a large supply "
      "(20 should suffice) of shield pieces (\"" shields "\"). "
-     "You will also need many coloured " tokens " and " bags " to put them in (or cards to shuffle)."
+     "You will also need many coloured " tokens " (in " (count characters) " different colours) and " bags " to put them in (or cards to shuffle)."
      ]]
 
    [:div [:h2 "Setting"]
@@ -65,7 +53,9 @@
 
    [:div [:h2 "Set up the Game"]
     [:p
-     "Place one more " vp " than there are players in a pile on the table."
+     "Choose how many " vps " to play with and place them in a pile. "
+     "It is suggested that you use one more " vp " than there are players, but you can vary this for a shorter or longer game. "
+     "Layout the " (count characters) " types of " token " each in their own pile. "
      "Place the coloured player " minions " and " shields " on the piece card. "
      "Give each player 4 " bronze " " tokens " in a draw " bag ". "
      "Give each player an empty discard " bag ". "]]

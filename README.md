@@ -1,4 +1,4 @@
-# Knights of Bog Castle (working title)
+# Cakewalk (working title)
 
 Prototyping a board game.
 
@@ -34,4 +34,4 @@ get live reloading, nor a REPL.
 
 ## Copyright Notice
 
-Copyright © 2017 Peter Westmacott
+Copyright © 2017-2019 Peter Westmacott
