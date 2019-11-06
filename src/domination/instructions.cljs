@@ -37,8 +37,8 @@
 
    [:div [:h2 "Setting"]
     [:p
-     "The Dark Ages. In the Kingdom of the Britons, the rule of King Æthelscone the Mighty has crumbled with his untimely demise. "
-     "His son, the prince Æthelcrumb waits in the castle for his coronation. "
+     "The Dark Ages. In the Kingdom of the Britons, the rule of Queen Æthelscone the Mighty has crumbled with her untimely demise. "
+     "Her son, the prince Æthelcrumb waits in the castle for his coronation. "
      "A mysterious but exquisitely delicious artefact has fallen through a rift in time. "
      "The villagers are calling it \"" cake "\". "
      "Seize the opportunity! "
