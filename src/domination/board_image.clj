@@ -18,7 +18,7 @@
 
 ;(def width 2100)
 ;(def height 2970)
-(def hex-radius 40)
+(def hex-radius 120)
 (def x-step (* (/ (Math/sqrt 3) 2) 2 hex-radius))
 (def y-step (* (/ 3 2) hex-radius))
 (def n-x 10)
@@ -371,6 +371,57 @@
   (.setStroke g (BasicStroke. width BasicStroke/CAP_ROUND BasicStroke/JOIN_ROUND))
   (.drawLine g xa ya xb yb))
 
+(defn draw-river [g]
+  (let [points (->> (for [[[x1 y1] [x2 y2] [x3 y3]] (partition 3 1 river-xys)]
+                      (let [[xp1 yp1] (xy-pos x1 y1)
+                            [xp2 yp2] (xy-pos x2 y2)
+                            [xp3 yp3] (xy-pos x3 y3)
+                            xh1 (scale xp2 xp1 0.5)
+                            xh2 xp2
+                            xh3 (scale xp2 xp3 0.5)
+                            yh1 (scale yp2 yp1 0.5)
+                            yh2 yp2
+                            yh3 (scale yp2 yp3 0.5)]
+                        (for [prop (range 0 1 0.1)]
+                          (let [xa (scale xh1 xh2 prop)
+                                ya (scale yh1 yh2 prop)
+                                xb (scale xh2 xh3 prop)
+                                yb (scale yh2 yh3 prop)]
+                            [(scale xa xb prop)
+                             (scale ya yb prop)]))))
+                    (apply concat)
+                    (partition 2 1))
+        clip (.getClip g)]
+    (.setClip g (board-outline 1.0))
+
+    (doseq [[[xa ya] [xb yb]] points]
+      (draw-line g xa ya xb yb (Color. 100 80 20) (/ hex-radius 0.75)))
+    (doseq [[[xa ya] [xb yb]] points]
+      (draw-line g xa ya xb yb (Color. 100 100 250 127) (/ hex-radius 1.1)))
+    ;(doseq [[[xa ya] [xb yb]] points]
+    ;  (draw-line g xa ya xb yb (Color. 80 80 200 127) (/ hex-radius 1.1)))
+    ;(doseq [[[xa ya] [xb yb]] points]
+    ;  (draw-line g xa ya xb yb (Color. 60 60 150) (/ hex-radius 1.4)))
+
+    (doseq [[[xa ya] [xb yb]] points
+            _ (range 1500)
+            :let [light (+ 50 (rand-int 200))
+                  blue light
+                  green (int (* 0.4 light))
+                  red (int (* 0.4 green))
+                  scale (rand)
+                  x-offset (* scale (rand-0 (* hex-radius 0.75)))
+                  y-offset (* scale (rand-0 (* hex-radius 0.75)))]]
+
+      (.setColor g (Color. red green blue (int (+ 50 (* 50 (- 1 scale))))))
+      (.setStroke g (BasicStroke. 1))
+      (.drawLine g
+                 (+ x-offset xa)
+                 (+ y-offset ya)
+                 (+ x-offset xb)
+                 (+ y-offset yb)))
+    (.setClip g clip)))
+
 (defn draw-board []
   (let [^Graphics2D g (.getGraphics image)]
 
@@ -393,59 +444,15 @@
     (.setColor g outline-color)
     (.draw g (board-outline 1.02))
 
+    (draw-river g)
+
     (doseq [[ix iy] all-xys]
       (let [[x y] (xy-pos ix iy)
             terrain (get-in terrain-map [iy ix])]
         (render g terrain x y)))
 
-    (.setClip g (board-outline 1.0))
-    (let [points (->> (for [[[x1 y1] [x2 y2] [x3 y3]] (partition 3 1 river-xys)]
-                        (let [[xp1 yp1] (xy-pos x1 y1)
-                              [xp2 yp2] (xy-pos x2 y2)
-                              [xp3 yp3] (xy-pos x3 y3)
-                              xh1 (scale xp2 xp1 0.5)
-                              xh2 xp2
-                              xh3 (scale xp2 xp3 0.5)
-                              yh1 (scale yp2 yp1 0.5)
-                              yh2 yp2
-                              yh3 (scale yp2 yp3 0.5)]
-                          (for [prop (range 0 1 0.1)]
-                            (let [xa (scale xh1 xh2 prop)
-                                  ya (scale yh1 yh2 prop)
-                                  xb (scale xh2 xh3 prop)
-                                  yb (scale yh2 yh3 prop)]
-                              [(scale xa xb prop)
-                               (scale ya yb prop)]))))
-                      (apply concat)
-                      (partition 2 1))]
-      (doseq [[[xa ya] [xb yb]] points]
-        (draw-line g xa ya xb yb (Color. 100 80 20) (/ hex-radius 1)))
-      (doseq [[[xa ya] [xb yb]] points]
-        (draw-line g xa ya xb yb (Color. 100 100 250) (/ hex-radius 1.1)))
-      (doseq [[[xa ya] [xb yb]] points]
-        (draw-line g xa ya xb yb (Color. 80 80 200) (/ hex-radius 1.2)))
-      (doseq [[[xa ya] [xb yb]] points]
-        (draw-line g xa ya xb yb (Color. 60 60 150) (/ hex-radius 1.4)))
 
-      (doseq [[[xa ya] [xb yb]] points
-              _ (range 500)
-              :let [light (+ 50 (rand-int 200))
-                    blue light
-                    green (int (* 0.4 light))
-                    red (int (* 0.4 green))
-                    scale (rand)
-                    x-offset (* scale (rand-0 (* hex-radius 0.75)))
-                    y-offset (* scale (rand-0 (* hex-radius 0.75)))]]
-
-        (.setColor g (Color. red green blue (int (+ 50 (* 50 (- 1 scale))))))
-        (.setStroke g (BasicStroke. 1))
-        (.drawLine g
-                   (+ x-offset xa)
-                   (+ y-offset ya)
-                   (+ x-offset xb)
-                   (+ y-offset yb))))
-
-    (doseq [[ix iy] all-xys
+    #_(doseq [[ix iy] all-xys
             :let [[x y] (xy-pos ix iy)
                   terrain (get-in terrain-map [iy ix])]
             :when (#{:brga :brgb} terrain)]
@@ -457,3 +464,4 @@
 
     (println (str (Math/round width-mm) " mm X " (Math/round height-mm) " mm"))))
 
+(draw-board)
