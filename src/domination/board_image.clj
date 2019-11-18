@@ -16,9 +16,12 @@
 (defn rand-0 [n]
   (- (rand n) (/ n 2)))
 
+(defn rand-bit [n variance]
+  (+ n (rand-0 (* n variance))))
+
 ;(def width 2100)
 ;(def height 2970)
-(def hex-radius 120)
+(def hex-radius 60)
 (def x-step (* (/ (Math/sqrt 3) 2) 2 hex-radius))
 (def y-step (* (/ 3 2) hex-radius))
 (def n-x 10)
@@ -90,7 +93,7 @@
          (.setColor g colour-a))
        (.fillArc g
                  (- x (* scale (/ hex-radius 2)))
-                 (- y (* scale (/ hex-radius 9)) v)
+                 (- y v)
                  (* scale hex-radius)
                  (* scale (/ hex-radius 2))
                  0 360)))))
@@ -188,19 +191,19 @@
 
 (def terrain-map
   [[:cake :cake :cake :cake :cake :cake :cake :cake :cake :cake]
-      [:wall :twrr :spot :spot :spot :spot :spot :twrl :wall]
+      [:wall :twrr :spot :spot :spot :tree :spot :twrl :wall]
    [:spot :spot :spot :spot :spot :spot :spot :spot :spot :spot]
-      [:spot :spot :twrl :wall :wall :wall :twrr :spot :spot]
-   [:spot :spot :spot :spot :spot :spot :spot :spot :spot :spot]
-      [:spot :spot :spot :midd :midd :midd :spot :spot :spot]
-   [:spot :spot :spot :midd :midd :midd :midd :spot :spot :spot]
-      [:rivr :spot :spot :midd :midd :midd :spot :spot :spot]
+      [:tree :spot :twrl :wall :wall :wall :twrr :spot :spot]
+   [:spot :spot :spot :spot :spot :spot :spot :spot :tree :spot]
+      [:tree :spot :spot :midd :trmd :midd :spot :tree :tree]
+   [:tree :tree :spot :midd :midd :midd :midd :spot :tree :spot]
+      [:rivr :tree :spot :midd :midd :midd :spot :spot :spot]
    [:spot :brga :spot :spot :spot :spot :spot :spot :spot :spot]
-      [:spot :rivr :rivr :spot :spot :spot :spot :spot :spot]
-   [:spot :spot :spot :rivr :brgb :rivr :rivr :spot :spot :spot]
-      [:spot :spot :spot :spot :spot :spot :brga :spot :spot]
-   [:spot :spot :spot :spot :spot :spot :spot :rivr :brgb :rivr]
-      [:spot :spot :spot :spot :spot :spot :spot :spot :spot]
+      [:spot :rivr :rivr :spot :tree :tree :spot :spot :spot]
+   [:spot :spot :tree :rivr :brgb :rivr :rivr :spot :spot :tree]
+      [:spot :tree :tree :spot :spot :tree :brga :spot :tree]
+   [:spot :spot :tree :spot :spot :spot :spot :rivr :brgb :rivr]
+      [:spot :spot :tree :spot :spot :spot :spot :spot :tree]
    [:strt :strt :strt :strt :strt :strt :strt :strt :strt :strt]])
 
 (defmulti render (fn [_g terrain _x _y] terrain))
@@ -210,26 +213,124 @@
   (.setColor g ground-color)
   (.fill g (polygon x y (* 0.95 hex-radius) 6 0)))
 
+(defn render-rubbish [g x y]
+  (let [t (.getTransform g)]
+    (doseq [light (range 0 256 0.3)]
+      (let [angle (rand-0 (/ TAU 4))
+            dist (rand (* 0.8 hex-radius))
+            x-size (rand (* hex-radius 0.25))
+            y-size (rand (* hex-radius 0.25))
+            x-midd (+ x (* dist (Math/sin angle)))
+            y-midd (+ y (* dist (Math/cos angle)) (- (* 0.32 hex-radius)))
+            x-start (- x-midd (/ x-size 2))
+            y-start (- y-midd (/ y-size 2))]
+        (.setColor g (Color. (rand-int light) (rand-int light) (rand-int light)))
+        (.setTransform g (doto (AffineTransform.)
+                           (.translate x-midd y-midd)
+                           (.rotate (rand TAU))
+                           (.translate (- x-midd) (- y-midd))
+                           ))
+        (.fillArc g x-start y-start x-size y-size 0 360)))
+    (.setTransform g t)))
+
+(defn rotate-2d [[x y] theta]
+  [(+ (* x (Math/cos theta))
+      (* y (Math/sin theta)))
+   (- (* y (Math/cos theta))
+      (* x (Math/sin theta)))])
+
+(defn rotate-3d [[x y z] yaw pitch]
+  (let [[x' z'] (rotate-2d [x z] pitch)
+        [x'' y'] (rotate-2d [x' y] yaw)]
+    [x'' y' z']))
+
+(defn add-3d [a b]
+  (map + a b))
+
+(defn scale-3d [a scale]
+  (map #(* scale %) a))
+
+(defn create-branches [scale transform]
+  (if (< 0.4 scale)
+    (let [origin [0 0 0]
+          new-point [0 0 hex-radius]
+          angle (rand TAU)
+          next-scale (* scale (+ 0.7 (rand 0.1)))
+          branch [:branch origin new-point next-scale]
+          transform-branch (fn [[render-type start end scale :as arg]]
+                             [render-type (transform start) (transform end) scale])]
+      (map transform-branch
+           (concat [branch]
+                   (apply concat
+                          (cons (create-branches next-scale #(add-3d new-point (scale-3d (rotate-3d % angle (/ TAU 60)) scale)))
+                                (for [spread (range 0 TAU (/ TAU 7))
+                                      :let [r (rand)]]
+                                  (create-branches next-scale #(add-3d new-point (scale-3d (rotate-3d % (+ angle spread r) (/ TAU 15)) next-scale)))))))))
+    [[:leaf [0 0 hex-radius] [0 0 hex-radius]]]))
+
+(defn render-branches [g x y branches]
+  (.setColor g (Color. 100 20 0))
+  (doseq [n (range 0 (* hex-radius 0.1) 0.1)]
+    (.fill g (polygon x (+ y n n (- (* hex-radius 0.10))) n 10 0 0.5)))
+  (doseq [[render-type :as branch] (sort-by (fn [[_ _ [_ y z]]] (- z y)) branches)
+          :when (= render-type :branch)]
+    (let [[_ [x1 y1 z1] [x2 y2 z2] scale] branch
+          gx1 (+ x x1)
+          gy1 (- y (* y1 0.5) (* z1 0.4))
+          gx2 (+ x x2)
+          gy2 (- y (* y2 0.5) (* z2 0.4))
+          offset (* 2 scale)]
+      (.setStroke g (BasicStroke. (* 2 offset) BasicStroke/CAP_ROUND BasicStroke/JOIN_ROUND))
+      (.setColor g (Color. 140 40 20))
+      (.drawLine g (- gx1 offset) (- gy1 offset) (- gx2 offset) (- gy2 offset))
+      (.setColor g (Color. 100 20 0))
+      (.drawLine g gx1 gy1 gx2 gy2))))
+
+(defn render-leaves [g x y branches]
+  (doseq [[render-type :as branch] (sort-by (fn [[_ _ [_ y z]]] (- z y)) branches)
+          :when (= render-type :leaf)]
+    (let [[_ [x1 y1 z1]] branch
+          gx1 (+ x x1)
+          gy1 (- y (* y1 0.5) (* z1 0.4))]
+      (.setColor g (Color. 0 (int (+ 100 (rand 155))) 0 30))
+      (.fill g (polygon gx1 gy1 (* hex-radius 0.05) 10 0)))))
+
+(defmethod render :trmd [^Graphics2D g _terrain x y]
+  (let [branches (create-branches 1.0 identity)]
+    (render g :spot x y)
+    (render-branches g x (+ y (* hex-radius 0.4)) branches)
+    (render-token g x y board-color ground-color)
+    (render-rubbish g x y)
+    (render-leaves g x (+ y (* hex-radius 0.4)) branches)))
+
+(defmethod render :tree [^Graphics2D g _terrain x y]
+  (let [branches (create-branches 1.0 identity)]
+    (render g :spot x y)
+    (render-branches g x (+ y (* hex-radius 0.4)) branches)
+    (render-leaves g x (+ y (* hex-radius 0.4)) branches)))
+
 (defmethod render :cake [^Graphics2D g _terrain x y]
   (render g :spot x y)
   (render-arrow g x (- y (* 1.25 hex-radius)))
   (render-token g x y board-color ground-color)
-  (.setColor g (Color. 130 50 60))
-  (doseq [_ (range 20)]
+  (doseq [_ (range 30)]
     (let [angle (rand TAU)
           dist (rand (* hex-radius 0.45))
           size (rand (* hex-radius 0.04))
           cx (+ x (* dist (Math/sin angle)))
-          cy (+ y (* dist 0.5 (Math/cos angle)) (* 0.05 hex-radius))]
+          cy (+ y (* dist 0.5 (Math/cos angle)) (* 0.3 hex-radius))]
+      (.setColor g (Color. 180 100 110))
+      (.fill g (polygon (- cx (* hex-radius 0.01)) (- cy (* hex-radius 0.01)) size (rand-nth [3 5 6 7]) (rand TAU)))
+      (.setColor g (Color. 130 50 60))
       (.fill g (polygon cx cy size (rand-nth [3 5 6 7]) (rand TAU)))))
   (let [scale 1.4
         cake (ImageIO/read (io/file "./resources/public/images/cake.png"))
         cake-w (.getWidth cake)
         cake-h (.getHeight cake)
-        dx1 (- x (* scale (/ hex-radius 10)))
-        dy1 (- y (* scale (/ hex-radius 2.9)))
-        dx2 (+ dx1 (* scale hex-radius 0.6))
-        dy2 (+ dy1 (* scale hex-radius 0.45))]
+        dx1 (- x (* scale (/ hex-radius 2)))
+        dy1 (- y (* scale (/ hex-radius 2.5)))
+        dx2 (+ dx1 (* scale hex-radius 1.8 0.6))
+        dy2 (+ dy1 (* scale hex-radius 1.8 0.45))]
     (.drawImage g cake
                 dx1 dy1 dx2 dy2
                 0 0 cake-w cake-h
@@ -244,31 +345,7 @@
 (defmethod render :midd [^Graphics2D g _terrain x y]
   (render g :spot x y)
   (render-token g x y board-color ground-color)
-
-  (let [t (.getTransform g)]
-
-    (doseq [light (range 0 256 0.3)]
-
-      (let [angle (rand-0 (/ TAU 4))
-            dist (rand (* 0.8 hex-radius))
-            x-size (rand (* hex-radius 0.25))
-            y-size (rand (* hex-radius 0.25))
-            x-midd (+ x (* dist (Math/sin angle)))
-            y-midd (+ y (* dist (Math/cos angle)) (- (* 0.5 hex-radius)))
-            x-start (- x-midd (/ x-size 2))
-            y-start (- y-midd (/ y-size 2))]
-        (.setColor g (Color. (rand-int light) (rand-int light) (rand-int light)))
-
-        (.setTransform g (doto (AffineTransform.)
-                           (.translate x-midd y-midd)
-                           (.rotate (rand TAU))
-                           (.translate (- x-midd) (- y-midd))
-                           ))
-
-        (.fillArc g x-start y-start x-size y-size 0 360))
-      )
-
-    (.setTransform g t)))
+  (render-rubbish g x y))
 
 (defn adj-circle [x y dx dy r]
   (polygon (+ x (* dx x-step))
@@ -284,9 +361,12 @@
       (.fill g (polygon x y i 6 0)))
 
     (.setClip g (-> (polygon x y hex-radius 6 0)
+                    (shape-subtract (adj-circle x y -0.5 -1 1.1))
+                    (shape-subtract (adj-circle x y 0.5 1 1.1))))
+    (render g :spot x y)
+    (.setClip g (-> (polygon x y hex-radius 6 0)
                     (shape-subtract (adj-circle x y -0.5 -1 1.05))
                     (shape-subtract (adj-circle x y 0.5 1 1.05))))
-    (render g :spot x y)
 
     (.setColor g outline-color)
     (.setStroke g (BasicStroke. (/ hex-radius 5)))
@@ -394,8 +474,9 @@
         clip (.getClip g)]
     (.setClip g (board-outline 1.0))
 
-    (doseq [[[xa ya] [xb yb]] points]
-      (draw-line g xa ya xb yb (Color. 100 80 20) (/ hex-radius 0.75)))
+    (doseq [[[xa ya] [xb yb]] points
+            f (range 0.75 1.1 0.05)]
+      (draw-line g xa ya xb yb (Color. 50 40 10 30) (/ hex-radius f)))
     (doseq [[[xa ya] [xb yb]] points]
       (draw-line g xa ya xb yb (Color. 100 100 250 127) (/ hex-radius 1.1)))
     ;(doseq [[[xa ya] [xb yb]] points]

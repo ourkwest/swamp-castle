@@ -13,7 +13,7 @@
 (def TAU (* 2 Math/PI))
 
 
-(def token-size 250)
+(def token-size (* 4 board/hex-radius))
 
 (def width (* 3 token-size))
 (def height (* 3 token-size))
@@ -95,6 +95,30 @@
                 (* token-size 0.0025)
                 string)))
 
+(defn write-shadow [g font string y-offset]
+  (let [font (Font. nil Font/PLAIN font)
+        bounds (.getStringBounds font string (FontRenderContext. (AffineTransform.) (boolean true) (boolean true)))
+        old-clip (.getClip g)]
+    (.setFont g font)
+    (.setColor g (Color. 0 0 0 10))
+    (.setClip g (board/polygon
+                  (* token-size 0.5)
+                  (* token-size 0.675)
+                  board/hex-radius
+                  20 0 0.5))
+    (.setTransform g (AffineTransform/getScaleInstance 1.0 0.8))
+    (smear-text g
+                (int (- (/ token-size 2) (/ (.getWidth bounds) 2)))
+                (int (+ y-offset (/ token-size 1.2) (* (.getHeight bounds) 0.3)))
+                (* token-size 0.01)
+                string)
+    (.setTransform g (AffineTransform.))
+    (.setClip g old-clip)))
+
+(defn write-text-with-shadow [g font string y-offset]
+  (write-text g font string y-offset)
+  (write-shadow g font string y-offset))
+
 (defn draw-tokens []
   (let [^Graphics2D g (.getGraphics image)
         images (for [_ (range 9)]
@@ -160,34 +184,50 @@
           (board/render-token
             g
             (* token-size 0.5)
-            (* token-size 0.3)
+            (- (* token-size 0.35) (* 2.5 (/ board/hex-radius 9)))
             (rgb (darker colour))
             (rgb (brighter colour))
-            2.5
+            2.0
             )
           (board/render-token
             g
             (* token-size 0.5)
-            (* token-size 0.65)
+            (- (* token-size 0.65) (* 2.5 (/ board/hex-radius 9)))
             (rgb (darker colour))
             (rgb (brighter colour))
-            2.5
+            2.0
             ))
 
         (case label
           "Bronze" (write-text g (* token-size 0.2) label 0)
           "Silver" (write-text g (* token-size 0.25) label 0)
           "Gold" (write-text g (* token-size 0.3) label 0)
-          "Farmer" (write-text g (* token-size 0.2) label 0)
+          "Farmer" (write-text-with-shadow g (* token-size 0.2) label 0)
           "Horse Rider" (do
-                          (write-text g (* token-size 0.2) "Horse" (- (* token-size 0.1)))
-                          (write-text g (* token-size 0.2) "Rider" (* token-size 0.1)))
-          "Archer" (write-text g (* token-size 0.2) label 0)
+                          (write-text-with-shadow g (* token-size 0.2) "Horse" (- (* token-size 0.1)))
+                          (write-text-with-shadow g (* token-size 0.2) "Rider" (* token-size 0.1)))
+          "Archer" (write-text-with-shadow g (* token-size 0.2) label 0)
           "Chocolate Cake" (do
-                             (write-text g (* token-size 0.15) "Chocolate" 0)
-                             (write-text g (* token-size 0.15) "Cake" (* token-size 0.2)))
-          "Blacksmith" (write-text g (* token-size 0.13) label 0)
-          "Knight" (write-text g (* token-size 0.2) label 0)
+                             (write-text g (* token-size 0.15) "Chocolate" (* token-size 0.05))
+                             (write-text g (* token-size 0.15) "Cake" (* token-size 0.25))
+                             (let [h-scale 0.7
+                                   v-scale 0.5
+                                   x-offset (* token-size 0.03)
+                                   y-offset (* token-size 0.025)
+                                   cake (ImageIO/read (io/file "./resources/public/images/cake.png"))
+                                   cake-w (.getWidth cake)
+                                   cake-h (.getHeight cake)
+                                   dx1 (- (+ (/ token-size 2) x-offset) (/ (* h-scale cake-w) 2)) #_(- x (* scale (/ hex-radius 2)))
+                                   dy1 (- (+ (/ token-size 2) y-offset) (/ (* v-scale cake-h) 2) (/ token-size 4.5))
+                                   dx2 (+ dx1 (* h-scale cake-w))
+                                   dy2 (+ dy1 (* v-scale cake-h))]
+                               (.drawImage g cake
+                                           dx1 dy1 dx2 dy2
+                                           0 0 cake-w cake-h
+                                           nil))
+                             )
+          "Blacksmith" (write-text-with-shadow g (* token-size 0.13) label 0)
+          "Knight" (write-text-with-shadow g (* token-size 0.2) label 0)
           nil)
         )
 
@@ -196,3 +236,4 @@
 
     (refresh-fn)))
 
+(draw-tokens)
