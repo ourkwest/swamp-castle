@@ -21,7 +21,7 @@
 
 ;(def width 2100)
 ;(def height 2970)
-(def hex-radius 60)
+(def hex-radius 120)
 (def x-step (* (/ (Math/sqrt 3) 2) 2 hex-radius))
 (def y-step (* (/ 3 2) hex-radius))
 (def n-x 10)

@@ -12,8 +12,8 @@
 
 (def TAU (* 2 Math/PI))
 
-
-(def token-size (* 4 board/hex-radius))
+(def sf 2.0)
+(def token-size (int (* 4.0 sf board/hex-radius)))
 
 (def width (* 3 token-size))
 (def height (* 3 token-size))
@@ -103,8 +103,8 @@
     (.setColor g (Color. 0 0 0 10))
     (.setClip g (board/polygon
                   (* token-size 0.5)
-                  (* token-size 0.675)
-                  board/hex-radius
+                  (* token-size 0.705)
+                  (* sf board/hex-radius)
                   20 0 0.5))
     (.setTransform g (AffineTransform/getScaleInstance 1.0 0.8))
     (smear-text g
@@ -187,7 +187,7 @@
             (- (* token-size 0.35) (* 2.5 (/ board/hex-radius 9)))
             (rgb (darker colour))
             (rgb (brighter colour))
-            2.0
+            (* 2.0 sf)
             )
           (board/render-token
             g
@@ -195,7 +195,7 @@
             (- (* token-size 0.65) (* 2.5 (/ board/hex-radius 9)))
             (rgb (darker colour))
             (rgb (brighter colour))
-            2.0
+            (* 2.0 sf)
             ))
 
         (case label
@@ -210,8 +210,8 @@
           "Chocolate Cake" (do
                              (write-text g (* token-size 0.15) "Chocolate" (* token-size 0.05))
                              (write-text g (* token-size 0.15) "Cake" (* token-size 0.25))
-                             (let [h-scale 0.7
-                                   v-scale 0.5
+                             (let [h-scale (* sf sf 0.7)
+                                   v-scale (* sf sf 0.5)
                                    x-offset (* token-size 0.03)
                                    y-offset (* token-size 0.025)
                                    cake (ImageIO/read (io/file "./resources/public/images/cake.png"))
