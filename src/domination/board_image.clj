@@ -545,4 +545,5 @@
 
     (println (str (Math/round width-mm) " mm X " (Math/round height-mm) " mm"))))
 
-(draw-board)
+(comment
+  (draw-board))
