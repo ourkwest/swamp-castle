@@ -13,10 +13,10 @@
     [javax.imageio ImageIO]))
 
 
-(def scale 200)
+(def scale 100)
 
-(def width (* scale 7))
-(def height (* scale 10))
+(def width (* scale 10))
+(def height (* scale 7))
 
 ; TODO: flip x/y !
 
@@ -66,14 +66,14 @@
           font (Font. nil Font/BOLD font-size)]
       (doseq [[attr-idx attribute] (map-indexed vector attributes)
               :let [label (:label attribute)
-                    left (* scale (inc attr-idx))
-                    right (+ scale left)
+                    top (* scale (inc attr-idx))
+                    bottom (+ scale top)
+                    left 0
+                    right scale
                     this-width (- right left)
-                    top 0
-                    bottom scale
                     this-height (- bottom top)
                     mid-x (+ left (/ this-width 2))
-                    mid-y (+ 0 (/ scale 2))
+                    mid-y (+ top (/ scale 2))
                     inset (* scale 0.05)]]
 
         (.setColor g (:colour attribute))
@@ -92,18 +92,20 @@
 
         (text g font (str label) (int mid-x) (int mid-y))
         (.setStroke g (BasicStroke. (* scale 0.01)))
-        (.drawLine g left 0 left height)
+        (.drawLine g 0 top width top)
         ))
 
     (let [font-size (* scale 0.6)
           font (Font. nil Font/PLAIN font-size)]
-      (doseq [[character-idx character] (map-indexed vector data/characters)
+      (doseq [[character-idx character] (->> data/characters
+                                             (sort-by :price)
+                                             (map-indexed vector))
               :let [token-image (tokens/draw-token character)
-                    left 0
-                    right scale
+                    top 0
+                    bottom scale
+                    left (* scale (inc character-idx))
+                    right (* scale (inc (inc character-idx)))
                     this-width (- right left)
-                    top (* scale (inc character-idx))
-                    bottom (* scale (inc (inc character-idx)))
                     this-height (- bottom top)
                     mid-x (+ left (/ this-width 2))
                     mid-y (+ top (/ this-height 2))]]
@@ -126,13 +128,13 @@
         #_(.draw g (domination.board-image/polygon mid-x mid-y (* this-width 0.45) 200 0))
 
         (.setStroke g (BasicStroke. (* scale 0.01)))
-        (.drawLine g 0 top width top)
+        (.drawLine g left 0 left height)
 
         (doseq [[attr-idx attribute] (map-indexed vector attributes)
-                :let [left (* scale (inc attr-idx))
-                      right (+ scale left)
-                      width (- right left)
-                      mid-x (+ left (/ width 2))
+                :let [top (* scale (inc attr-idx))
+                      bottom (+ scale top)
+                      this-height (- bottom top)
+                      mid-y (+ top (/ this-height 2))
                       value ((:character-key attribute) character)
                       inset (* scale 0.05)]
                 :when value]
@@ -141,14 +143,14 @@
           (.fillArc g
                     (+ left inset)
                     (+ top inset)
-                    (- width inset inset)
+                    (- this-width inset inset)
                     (- this-height inset inset) 0 360)
           (.setColor g Color/BLACK)
           (.setStroke g (BasicStroke. (* scale 0.05)))
           (.drawArc g
                     (+ left inset)
                     (+ top inset)
-                    (- width inset inset)
+                    (- this-width inset inset)
                     (- this-height inset inset) 0 360)
           (.setFont g font)
           (text g font (str value) (int mid-x) (int mid-y))
