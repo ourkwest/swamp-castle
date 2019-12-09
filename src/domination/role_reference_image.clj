@@ -1,4 +1,4 @@
-(ns domination.token-card-image
+(ns domination.role-reference-image
   (:require
     [domination.see.core :as see]
     [domination.token-images :as tokens]
@@ -163,7 +163,7 @@
 
     )
 
-  (ImageIO/write image "png" (io/file "token-card.png"))
+  (ImageIO/write image "png" (io/file "role-reference.png"))
   (refresh-fn))
 
 (draw-token-card)
