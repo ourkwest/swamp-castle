@@ -1,6 +1,7 @@
 (ns domination.board-image
   (:require [clojure.java.io :as io]
-            [domination.see.core :as see])
+            [domination.see.core :as see]
+            [domination.data :as data])
   (:import [javax.imageio ImageIO]
            [java.awt.image BufferedImage]
            [java.awt Color Polygon Graphics2D RenderingHints Rectangle BasicStroke]
@@ -189,22 +190,7 @@
     (.drawLine g (- x hex-radius) (+ y (* hex-radius 0.1)) (+ x hex-radius) (+ y (* hex-radius 0.1)))
     (.setClip g clip)))
 
-(def terrain-map
-  [[:cake :cake :cake :cake :cake :cake :cake :cake :cake :cake]
-      [:wall :twrr :spot :spot :spot :tree :spot :twrl :wall]
-   [:spot :spot :spot :spot :spot :spot :spot :spot :spot :spot]
-      [:tree :spot :twrl :wall :wall :wall :twrr :spot :spot]
-   [:spot :spot :spot :spot :spot :spot :spot :spot :tree :spot]
-      [:tree :spot :spot :midd :trmd :midd :spot :tree :tree]
-   [:tree :tree :spot :midd :midd :midd :midd :spot :tree :spot]
-      [:rivr :tree :spot :midd :midd :midd :spot :spot :spot]
-   [:spot :brga :spot :spot :spot :spot :spot :spot :spot :spot]
-      [:spot :rivr :rivr :spot :tree :tree :spot :spot :spot]
-   [:spot :spot :tree :rivr :brgb :rivr :rivr :spot :spot :tree]
-      [:spot :tree :tree :spot :spot :tree :brga :spot :tree]
-   [:spot :spot :tree :spot :spot :spot :spot :rivr :brgb :rivr]
-      [:spot :spot :tree :spot :spot :spot :spot :spot :tree]
-   [:strt :strt :strt :strt :strt :strt :strt :strt :strt :strt]])
+(def terrain-map data/terrain-map)
 
 (defmulti render (fn [_g terrain _x _y] terrain))
 (defmethod render :default [_ _ _ _] nil)

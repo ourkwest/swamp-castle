@@ -170,9 +170,10 @@
       "Silver" (write-text g (* token-size 0.25) label 0)
       "Gold" (write-text g (* token-size 0.3) label 0)
       "Farmer" (write-text-with-shadow g (* token-size 0.2) label 0)
-      "Horse Rider" (do
-                      (write-text-with-shadow g (* token-size 0.2) "Horse" (- (* token-size 0.1)))
-                      (write-text-with-shadow g (* token-size 0.2) "Rider" (* token-size 0.1)))
+      "Scout" (write-text-with-shadow g (* token-size 0.2) label 0)
+              #_(do
+                (write-text-with-shadow g (* token-size 0.2) "Horse" (- (* token-size 0.1)))
+                (write-text-with-shadow g (* token-size 0.2) "Rider" (* token-size 0.1)))
       "Archer" (write-text-with-shadow g (* token-size 0.2) label 0)
       "Chocolate Cake" (do
                          (write-text g (* token-size 0.15) "Chocolate" (* token-size 0.05))
@@ -192,7 +193,7 @@
                                        dx1 dy1 dx2 dy2
                                        0 0 cake-w cake-h
                                        nil)))
-      "Blacksmith" (write-text-with-shadow g (* token-size 0.13) label 0)
+      "Smithy" (write-text-with-shadow g (* token-size 0.2) label 0)
       "Knight" (write-text-with-shadow g (* token-size 0.2) label 0))
     image))
 
