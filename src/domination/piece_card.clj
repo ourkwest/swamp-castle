@@ -112,11 +112,14 @@
   )
 
 (defn price [^Graphics2D g x y cost]
-  (.setColor g (rgb 255 230 100))
+  (.setColor g (rgb 220 200 70))
   (.fill g (polygon x y (* scale 6) 8 (/ TAU 16)))
+  (.setColor g (rgb 255 230 100))
+  (.fill g (polygon x y (* scale 5) 8 (/ TAU 16)))
   (.setColor g (rgb 0 0 0))
   (.setStroke g (BasicStroke. 1))
   (.draw g (polygon x y (* scale 6) 8 (/ TAU 16)))
+  (.draw g (polygon x y (* scale 5) 8 (/ TAU 16)))
   (text g bold-font Color/BLACK (str cost) x y))
 
 (defn shield-spot [^Graphics2D g x y n]
@@ -235,8 +238,8 @@
                   scale (* width 0.1)
                   top (* height 0.75)
                   bottom (+ (* height 0.75) (/ scale 4))
-                  left (* scale (inc character-idx))
-                  right (* scale (inc (inc character-idx)))
+                  left (* scale character-idx 10/9)
+                  right (* scale (inc character-idx) 10/9)
                   this-width (- right left)
                   this-height (- bottom top)
                   mid-x (+ left (/ this-width 2))
@@ -267,7 +270,7 @@
       ;(.setColor g (:colour attribute))
       (draw-line g 0 (+ mid-y (* width 0.01)) width (+ mid-y (* width 0.01)) (:colour attribute) 1)
 
-      (text g plain-font Color/BLACK label mid-x mid-y)
+      ;(text g plain-font Color/BLACK label mid-x mid-y)
 
       (doseq [[character-idx character] (->> data/characters
                                              (sort-by :price)
@@ -277,8 +280,8 @@
                     scale (* width 0.1)
                     top (* height 0.75)
                     bottom (+ (* height 0.75) (/ scale 4))
-                    left (* scale (inc character-idx))
-                    right (* scale (inc (inc character-idx)))
+                    left (* scale character-idx 10/9)
+                    right (* scale (inc character-idx) 10/9)
                     this-width (- right left)
                     this-height (- bottom top)
                     mid-x (+ left (/ this-width 2))
@@ -286,7 +289,7 @@
                     ]]
 
         (when-let [value ((:character-key attribute) character)]
-          (text g plain-font Color/BLACK (str value) mid-x mid-y))
+          (text g plain-font Color/BLACK (str value " " (:label attribute)) mid-x mid-y))
         )
 
       )

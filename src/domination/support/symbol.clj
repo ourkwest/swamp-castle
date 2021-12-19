@@ -1,0 +1,274 @@
+(ns domination.support.symbol
+  (:require
+    [domination.support.util :as util]
+    [domination.support.draw :as draw]
+    [clojure.java.io :as io])
+  (:import
+    [java.awt Graphics2D Color BasicStroke Rectangle TexturePaint]
+    (java.awt.geom Ellipse2D Rectangle2D Rectangle2D$Float Ellipse2D$Float Area AffineTransform)
+    (javax.imageio ImageIO)))
+
+
+;TODO
+;  money symbol - bordered octagon with number inside
+;  role symbol - theatrical face mask
+;  player count symbol (2, 3, 4) - top half of an oval with a circle on top, 'stacked' sideways for more players
+;  cake symbol / image - hand drawn picture of cake
+;  shield symbol - ?
+;  VP symbol - ?
+;  midden symbol - pile of tokens?
+
+; do we need a minion symbol?
+
+
+; Damage
+; Range
+; Shield
+
+
+(def color-price-outer (draw/rgb 220 200 70))
+(def color-price-inner (draw/rgb 255 230 100))
+(def style-price-outer (draw/shape-style Color/BLACK 1.5 color-price-outer))
+(def style-price-inner (draw/shape-style Color/BLACK 1.5 color-price-inner))
+(def text-style-price (draw/text-style (util/mm->px 8) (draw/rgb 0 0 0 200) true))
+
+(defn- price-line [^Graphics2D g x1 y1 x2 y2]
+  (draw/line g (draw/line-style (util/mm->px 5) Color/YELLOW) x1 y1 x2 y2)
+  (draw/line g (draw/line-style (util/mm->px 3) color-price-inner) x1 y1 x2 y2)
+  (draw/line g (draw/line-style (util/mm->px 1) color-price-outer) x1 y1 x2 y2))
+
+(defn price-label
+  ([^Graphics2D g cost x y] (price-label g cost x y nil nil))
+  ([^Graphics2D g cost x1 y1 x2 y2]
+   (when x2
+     (price-line g x1 y1 x2 y2))
+
+   (let [outer-poly (draw/poly x1 y1 (util/mm->px 6) 8 (/ util/TAU 16))
+         inner-poly (draw/poly x1 y1 (util/mm->px 5) 8 (/ util/TAU 16))]
+
+     (draw/shape g (draw/shape-style nil 0 color-price-outer) outer-poly)
+     (let [extent 5]
+       (doseq [p (range 0 1 (/ 1 (util/mm->px extent)))]
+         (draw/line g (draw/line-style 1 (draw/rgb-lerp Color/WHITE (draw/rgb 255 255 255 0) p))
+                    (- x1 (* p (util/mm->px extent))) (+ y1 (util/mm->px 5))
+                    (+ x1 (util/mm->px 5)) (- y1 (* p (util/mm->px extent))))))
+     (draw/shape g (draw/line-style 1.5 Color/BLACK) outer-poly)
+
+     (draw/shape g (draw/shape-style nil 0 color-price-inner) inner-poly)
+     (draw/text g text-style-price (str cost) x1 y1)
+     (let [extent 4]
+       (doseq [p (range 0 1 (/ 1 (util/mm->px extent)))]
+         (draw/line g (draw/line-style 1 (draw/rgb-lerp Color/WHITE (draw/rgb 255 255 255 0) p))
+                    (+ x1 (* p (util/mm->px extent))) (- y1 (util/mm->px 4))
+                    (- x1 (util/mm->px 4)) (+ y1 (* p (util/mm->px extent))))))
+     (draw/shape g (draw/line-style 1.5 Color/BLACK) inner-poly)
+     (draw/text g (draw/text-style (util/mm->px 8) (draw/rgb 0 0 0 100) false) (str cost) x1 y1)
+
+     ;(draw/shape g style-price-inner inner-poly)
+     )
+
+   ;(draw/polygon g style-price-outer x1 y1 (util/mm->px 6) 8 (/ util/TAU 16))
+   ;(draw/polygon g style-price-inner x1 y1 (util/mm->px 5) 8 (/ util/TAU 16))
+   #_(draw/text g text-style-price (str cost) x1 y1)))
+
+(defn role-mask [^Graphics2D g x y size]
+  (let [mask-style (draw/shape-style
+                     Color/BLACK
+                     1.0
+                     (TexturePaint. (ImageIO/read (io/resource "images/woodgrain2.jpeg"))
+                                    (Rectangle2D$Float. 0 0 (util/mm->px (* size 2)) (util/mm->px (* size 2)))))
+        mask-style-2 (draw/shape-style
+                       (draw/rgb 100 50 50)
+                       1.0
+                       (draw/rgb 255 255 255 75))
+        mask-shape (draw/shape-subtract
+                     (draw/shape-add
+                       (Rectangle2D$Float. (- x size) (- y size) (* size 2) (* size 1))
+                       ; top curve
+                       (Ellipse2D$Float. (- x size) (- y (* size 1.2)) (* size 2) (* size 0.4))
+                       ; jaw line
+                       (Ellipse2D$Float. (- x size) (- y (* size 1.2)) (* size 2) (* size 2.4)))
+                     ; mouth
+                     (draw/shape-subtract
+                       (Ellipse2D$Float. (- x (* size 0.6)) (+ y (* size 0.2)) (* size 1.2) (* size 0.4))
+                       (Rectangle2D$Float. (- x (* size 0.6)) (+ y (* size 0.1)) (* size 1.2) (* size 0.2)))
+                     ; left eye
+                     (Ellipse2D$Float. (- x (* size 0.7)) (- y (* size 0.6)) (* size 0.6) (* size 0.3))
+                     ; right eye
+                     (Ellipse2D$Float. (+ x (* size 0.1)) (- y (* size 0.6)) (* size 0.6) (* size 0.3)))]
+    (draw/shape g mask-style mask-shape)
+    (draw/shape g mask-style-2 mask-shape)))
+
+(defn move [^Graphics2D g x y distance]
+  (let [move-style (draw/shape-style Color/BLACK 1.0 Color/GREEN)
+        radius (util/mm->px 6)
+        move-shape (draw/poly [#_[(- x (* radius 1)) (- y (* radius 1))]
+                               [(+ x (* radius 0)) (- y (* radius 1))]
+                               [(+ x (* radius 1)) (+ y (* radius 0))]
+                               [(+ x (* radius 0)) (+ y (* radius 1))]
+                               #_[(- x (* radius 1)) (+ y (* radius 1))]])
+        static-shape (draw/shape-subtract
+                       (draw/poly x y radius 20 0)
+                       (Rectangle2D$Float. x (- y radius) radius (* radius 2)))
+        s 0.75
+        move-shape (draw/shape-add
+                     (draw/shape-subtract
+                       (draw/poly x y (* radius s) 20 0)
+                       (Rectangle2D$Float. x (- y radius) radius (* radius 2)))
+                     ;(Rectangle2D$Float. (- x (util/mm->px 1)) (- y (* radius s)) (util/mm->px 2) (* radius 2 s))
+                     (draw/poly [[(+ x (util/mm->px 0)) (- y radius)]
+                                 [(+ x (util/mm->px 0) radius) y]
+                                 [(+ x (util/mm->px 0)) (+ y radius)]]))
+        ]
+    #_(doseq [[x-offset color] {(util/mm->px 1)  (draw/rgb 0 255 0)
+                              0                (draw/rgb 75 255 75)
+                              (util/mm->px -1) (draw/rgb 150 255 150)}]
+      (draw/shape g
+                  (draw/shape-style (draw/rgb 0 0 0 0) 1.0 color)
+                  (doto (Area. move-shape)
+                    (.transform (AffineTransform/getTranslateInstance x-offset 0)))))
+
+    (draw/with-clip g move-shape
+      (doseq [p (range 0 1 (/ 1 (+ radius radius)))]
+        (let [n (+ x (- radius) (* p (+ radius radius)))
+              p-2 (* 2 (- (util/clamp 0.5 p 1) 0.5))
+              c (draw/rgb-lerp (draw/rgb 230 210 125) (draw/rgb 0 225 0) p-2)]
+          (draw/line g (draw/line-style 1 c) n y (- n radius) (- y radius))
+          (draw/line g (draw/line-style 1 c) n y (- n radius) (+ y radius))))
+      (draw/text g text-style-price (str distance) x y)
+      (draw/shape g (draw/line-style 1) (draw/translate move-shape (util/mm->px -1) 0))
+      (draw/shape g (draw/line-style 0.5) (draw/translate move-shape (util/mm->px -2) 0)))
+
+    (draw/shape g (draw/line-style 1.5) move-shape)))
+
+(defn shield [g x y size]
+
+  (let [cutout (util/mm->px (/ size 10))
+        shape (draw/shape-subtract
+                (draw/shape-add
+                  (Rectangle2D$Float. (- x size) (- y size) (* 2 size) (* 1 size))
+                  (draw/shape-subtract
+                    (Ellipse2D$Float. (- x size) (- y (* size 1.5)) (* 3 size) (* 3 size))
+                    (Rectangle2D$Float. (- x size) (- y size size) (* 3 size) (* 2 size))
+                    (Rectangle2D$Float. x (- y size) (* 2 size) (* 3 size)))
+                  (draw/shape-subtract
+                    (Ellipse2D$Float. (- x size size) (- y (* size 1.5)) (* 3 size) (* 3 size))
+                    (Rectangle2D$Float. (- x size size) (- y size size) (* 3 size) (* 2 size))
+                    (Rectangle2D$Float. (- x size size) (- y size) (* 2 size) (* 3 size))))
+                (Ellipse2D$Float. (- x size cutout) (- y size cutout)
+                                  (* 2 cutout) (* 2 cutout))
+                (Ellipse2D$Float. (- x (- size) cutout) (- y size cutout)
+                                  (* 2 cutout) (* 2 cutout)))
+        inset (util/mm->px 1)
+        shape-inner (draw/shape-subtract
+                      (draw/shape-add
+                        (Rectangle2D$Float. (- x (- size inset)) (- y (- size inset)) (* 2 (- size inset)) (* 1 (- size inset)))
+                        (draw/shape-subtract
+                          (Ellipse2D$Float. (- x size (- inset)) (- y (* size 1.5)) (* 3 size) (* 3 size))
+                          (Rectangle2D$Float. (- x size) (- y size size) (* 3 size) (* 2 size))
+                          (Rectangle2D$Float. x (- y size) (* 3 size) (* 3 size)))
+                        (draw/shape-subtract
+                          (Ellipse2D$Float. (- x size size inset) (- y (* size 1.5)) (* 3 size) (* 3 size))
+                          (Rectangle2D$Float. (- x size size inset) (- y size size) (* 3 size) (* 2 size))
+                          (Rectangle2D$Float. (- x size size inset) (- y size) (+ (* 2 size) inset) (* 3 size))))
+                      (Ellipse2D$Float. (- x size cutout inset) (- y size cutout inset)
+                                        (+ (* 2 cutout) inset inset) (+ (* 2 cutout) inset inset))
+                      (Ellipse2D$Float. (- x (- size) cutout inset) (- y size cutout inset)
+                                        (+ (* 2 cutout) inset inset) (+ (* 2 cutout) inset inset)))
+
+        castle-shape (draw/shape-subtract
+                       (Rectangle2D$Float. (- x size) (- y size) (* 2 size) (* 3 size)) ; block
+                       (Rectangle2D$Float. (- x size) (- y size) (* 2 size) (* 0.7 size)) ; top
+                       (Rectangle2D$Float. (- x size) (+ y ) (* 2 size) (* 0.1 size)) ; line
+                       (Rectangle2D$Float. (- x size) (+ y (* 0.3 size)) (* 2 size) (* 0.1 size)) ; line
+                       (Rectangle2D$Float. (- x size) (+ y (* 0.6 size)) (* 2 size) (* 0.1 size)) ; line
+                       (Rectangle2D$Float. (- x size) (+ y (* 0.9 size)) (* 2 size) (* 0.1 size)) ; line
+                       (Rectangle2D$Float. (- x size) (+ y (* 1.2 size)) (* 2 size) (* 0.1 size)) ; line
+                       (Rectangle2D$Float. (- x (* 0.3 size)) (- y (* 0.3 size)) (* 0.2 size) (* 0.1 size)) ; castelations
+                       (Rectangle2D$Float. (+ x (* 0.1 size)) (- y (* 0.3 size)) (* 0.2 size) (* 0.1 size)) ; castelations
+                       ; sides
+                       (Ellipse2D$Float. (- x (* size 3)) (- y (* size 1.5)) (* 2.6 size) (* 3 size))
+                       (Ellipse2D$Float. (+ x (* size 3) (- (* 2.6 size))) (- y (* size 1.5)) (* 2.6 size) (* 3 size))
+                       )
+
+        point-shape (draw/poly [[0 (* size -0.3)]
+                                [(* size 0.1) 0]
+                                [(* size -0.1) 0]])
+        star-shape (draw/shape-add
+                     (draw/rotate point-shape (* util/TAU 0/5))
+                     (draw/rotate point-shape (* util/TAU 1/5))
+                     (draw/rotate point-shape (* util/TAU 2/5))
+                     (draw/rotate point-shape (* util/TAU 3/5))
+                     (draw/rotate point-shape (* util/TAU 4/5)))
+
+        draw-star (fn [g x y]
+                    (draw/shape g (draw/shape-style Color/WHITE
+                                                    (* 0.6 (/ size 20))
+                                                    Color/YELLOW)
+                                (draw/translate star-shape x y)))
+
+        ]
+
+    (draw/with-clip g shape
+      (doseq [n (range (* 2 size))]
+        (let [color (draw/rgb (- 150 (* 50 (/ n (* 2 size)))) (- 200 (* 50 (/ n (* 2 size)))) 255)]
+          (draw/line g (draw/line-style 1 color)
+                     (+ x (- size) n) (- y size) (+ x (- size) n) (+ y size size)))))
+
+    (draw/with-clip g shape-inner
+      (doseq [n (range (* 2 size))]
+        (let [color (draw/rgb (+ 100 (* 50 (/ n (* 2 size)))) (+ 150 (* 50 (/ n (* 2 size)))) 255)]
+          (draw/line g (draw/line-style 1 color)
+                     (+ x (- size) n) (- y size) (+ x (- size) n) (+ y size size))))
+
+       (draw/line g (draw/line-style (* 0.7 size) Color/BLUE)
+                 (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
+                 (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
+
+      (draw/line g (draw/line-style (* 0.5 size) Color/BLACK)
+                 (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
+                 (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
+
+      (draw-star g (- x (* 0.4 size)) (+ (+ y (* 0.1 size)) (* 0.5 size)))
+      (draw-star g (- x (* 0.0 size)) (+ (+ y (* 0.1 size)) (* 0.0 size)))
+      (draw-star g (+ x (* 0.4 size)) (- (+ y (* 0.1 size)) (* 0.5 size))))
+
+    (draw/shape g (draw/line-style 1.5) shape)
+    (draw/shape g (draw/line-style 0.6 Color/YELLOW) shape-inner)
+
+    ))
+
+;(defn damage [g ])
+
+(do ; test block
+
+  (require '[domination.see.core :as see])
+  (import '[java.awt.image BufferedImage]
+          '[java.awt RenderingHints])
+
+  (def width 400)
+  (def height 400)
+
+  (defonce ^BufferedImage image (BufferedImage. width height BufferedImage/TYPE_INT_ARGB))
+  (defonce refresh-fn (see/see image :only-draw-when-updated? true))
+
+  (def g (.getGraphics image))
+  (.setRenderingHint g RenderingHints/KEY_ANTIALIASING RenderingHints/VALUE_ANTIALIAS_ON)
+  (.setRenderingHint g RenderingHints/KEY_RENDERING RenderingHints/VALUE_RENDER_QUALITY)
+
+  (.setColor g Color/WHITE)
+  (.fillRect g 0 0 width height)
+
+  (price-label g 8 40 40 80 40)
+  (role-mask g 40 100 20)
+  (role-mask g 80 100 15)
+  (role-mask g 120 100 10)
+  (move g 40 160 4)
+  (shield g 40 220 20)
+  (shield g 120 220 40)
+  (shield g 185 220 15)
+  (shield g 220 220 10)
+
+  (refresh-fn)
+
+  )
