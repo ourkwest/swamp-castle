@@ -20,8 +20,10 @@
 
 ; do we need a minion symbol?
 
+; TODO:
+; 'draw' symbol for bonus tokens? or see-through mask symbol?
+; 'players' symbols for piece-card? 1,2,3,4 players or shields?
 
-; TODO: move "1" slightly to the left
 
 (def color-price-outer (draw/rgb 220 200 70))
 (def color-price-inner (draw/rgb 255 230 100))
@@ -376,15 +378,15 @@
     (draw/line g (draw/line-style 3 Color/WHITE #_(draw/rgb 100 50 0)) x (- y height) x (+ y (* height pole-length)))
 
     (draw/with-clip g flag-shape
-      (doseq [x (range x (+ x length))]
+      (doseq [lx (range 0 length)]
         (draw/line g (draw/line-style 1 (draw/rgb-lerp
-                                          (draw/rgb 220 100 220)
+                                          (draw/rgb 170 100 220)
                                           (draw/rgb 255 100 200)
                                           ;Color/ORANGE
                                           ;Color/PINK
-                                          (Math/abs (Math/sin (/ x (/ size 3))))))
-                   x (- y height)
-                   x y)))
+                                          (Math/abs (Math/sin (* (/ lx length) 4)))))
+                   (+ x lx) (- y height)
+                   (+ x lx) y)))
     #_(draw/with-clip g star-shape
       (doseq [x (range x (+ x length))]
         (draw/line g (draw/line-style 1 (draw/rgb-lerp Color/WHITE
@@ -447,6 +449,8 @@
   (cake g 300 120 40)
 
   (flag g 300 350 50 1/2)
+  (flag g 300 300 40 1/2)
+  (flag g 300 250 30 1/2)
 
   (refresh-fn)
 

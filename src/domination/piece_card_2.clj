@@ -112,6 +112,11 @@
         (stone/rings (- width 50) (+ (- height 50) 10) [0 5] 20 30 0.8 6)
         (stone/rings 50 (+ (- height 50) 10) [0 5] 20 30 0.8 6)))
 
+    (symbol/flag g 50 30 20 0.8)
+    (symbol/flag g (- width 50) 30 20 0.8)
+    (symbol/flag g 50 (- height 50 20) 20 0.8)
+    (symbol/flag g (- width 50) (- height 50 20) 20 0.8)
+
     (let [shield-spacing (* util/shield-size 11/10)
           minion-spacing (* util/minion-size 11/10)
           x-offset (util/mm->px -3)
