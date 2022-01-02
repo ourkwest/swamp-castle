@@ -34,4 +34,4 @@ get live reloading, nor a REPL.
 
 ## Copyright Notice
 
-Copyright © 2017-2019 Peter Westmacott
+Copyright © 2017-2022 Rachel Westmacott

@@ -1,12 +1,12 @@
 (ns domination.token-images
   (:require [clojure.java.io :as io]
             [domination.data :as data]
-            [domination.see.core :as see]
+            ;[domination.see.core :as see]
             [domination.board-image :as board])
   (:import [javax.imageio ImageIO]
            [java.awt.image BufferedImage]
            [java.awt Color Polygon Graphics2D RenderingHints Rectangle BasicStroke Font]
-           [java.awt.geom Area Rectangle2D AffineTransform]
+           [java.awt.geom Area Rectangle2D AffineTransform Ellipse2D Ellipse2D$Double]
            [java.awt.font FontRenderContext]))
 
 
@@ -14,6 +14,7 @@
 
 (def sf 2.0)
 (def token-size (int (* 4.0 sf board/hex-radius)))
+;(def token-size (int (* 1.0 sf board/hex-radius)))
 
 (def width (* 3 token-size))
 (def height (* 3 token-size))
@@ -66,7 +67,7 @@
 
 
 (defonce image (BufferedImage. width height BufferedImage/TYPE_INT_ARGB))
-(defonce refresh-fn (see/see image :only-draw-when-updated? true))
+;(defonce refresh-fn (see/see image :only-draw-when-updated? true))
 
 (def xyn
   (for [x (range 3)
@@ -125,6 +126,10 @@
 
     (.setRenderingHint g RenderingHints/KEY_ANTIALIASING RenderingHints/VALUE_ANTIALIAS_ON)
     (.setRenderingHint g RenderingHints/KEY_RENDERING RenderingHints/VALUE_RENDER_QUALITY)
+
+    (let [inset (* token-size 0.095)
+          clip-size (- token-size inset inset)]
+      (.setClip g (Ellipse2D$Double. inset inset clip-size clip-size)))
 
     (.setColor g (Color. (int (first colour)) (int (second colour)) (int (last colour))))
     (.fillRect g 0 0 token-size token-size)
@@ -203,13 +208,15 @@
     (.setRenderingHint g RenderingHints/KEY_ANTIALIASING RenderingHints/VALUE_ANTIALIAS_ON)
     (.setRenderingHint g RenderingHints/KEY_RENDERING RenderingHints/VALUE_RENDER_QUALITY)
 
+
     (doseq [[x y n] xyn
             :let [token-image (draw-token (nth data/characters n))]]
 
-      (.drawImage g token-image (* x token-size) (* y token-size) nil)
+      ;(.drawImage g token-image (* x token-size) (* y token-size) nil)
       (ImageIO/write token-image "png" (io/file (str "token_" n ".png"))))
 
-    (refresh-fn)))
+    ;(refresh-fn)
+    ))
 
 (comment
   (draw-tokens))

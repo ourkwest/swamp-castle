@@ -21,10 +21,7 @@
 ; do we need a minion symbol?
 
 
-; Damage
-; Range
-; Shield
-
+; TODO: move "1" slightly to the left
 
 (def color-price-outer (draw/rgb 220 200 70))
 (def color-price-inner (draw/rgb 255 230 100))
@@ -33,7 +30,7 @@
 (def text-style-price (draw/text-style (util/mm->px 8) (draw/rgb 0 0 0 200) true))
 
 (defn- price-line [^Graphics2D g x1 y1 x2 y2]
-  (draw/line g (draw/line-style (util/mm->px 5) Color/YELLOW) x1 y1 x2 y2)
+  (draw/line g (draw/line-style (util/mm->px 5) (draw/rgb 255 255 0 128)) x1 y1 x2 y2)
   (draw/line g (draw/line-style (util/mm->px 3) color-price-inner) x1 y1 x2 y2)
   (draw/line g (draw/line-style (util/mm->px 1) color-price-outer) x1 y1 x2 y2))
 
@@ -71,6 +68,24 @@
    ;(draw/polygon g style-price-inner x1 y1 (util/mm->px 5) 8 (/ util/TAU 16))
    #_(draw/text g text-style-price (str cost) x1 y1)))
 
+
+(defn mask-shape [x y size]
+  (draw/shape-subtract
+    (draw/shape-add
+      (Rectangle2D$Float. (- x size) (- y size) (* size 2) (* size 1))
+      ; top curve
+      (Ellipse2D$Float. (- x size) (- y (* size 1.2)) (* size 2) (* size 0.4))
+      ; jaw line
+      (Ellipse2D$Float. (- x size) (- y (* size 1.2)) (* size 2) (* size 2.4)))
+    ; mouth
+    (draw/shape-subtract
+      (Ellipse2D$Float. (- x (* size 0.6)) (+ y (* size 0.2)) (* size 1.2) (* size 0.4))
+      (Rectangle2D$Float. (- x (* size 0.6)) (+ y (* size 0.1)) (* size 1.2) (* size 0.2)))
+    ; left eye
+    (Ellipse2D$Float. (- x (* size 0.7)) (- y (* size 0.6)) (* size 0.6) (* size 0.3))
+    ; right eye
+    (Ellipse2D$Float. (+ x (* size 0.1)) (- y (* size 0.6)) (* size 0.6) (* size 0.3))) )
+
 (defn role-mask [^Graphics2D g x y size]
   (let [mask-style (draw/shape-style
                      Color/BLACK
@@ -78,26 +93,17 @@
                      (TexturePaint. (ImageIO/read (io/resource "images/woodgrain2.jpeg"))
                                     (Rectangle2D$Float. 0 0 (util/mm->px (* size 2)) (util/mm->px (* size 2)))))
         mask-style-2 (draw/shape-style
-                       (draw/rgb 100 50 50)
-                       1.0
+                       ;(draw/rgb 100 50 50)
+                       Color/BLACK
+                       1.5
                        (draw/rgb 255 255 255 75))
-        mask-shape (draw/shape-subtract
-                     (draw/shape-add
-                       (Rectangle2D$Float. (- x size) (- y size) (* size 2) (* size 1))
-                       ; top curve
-                       (Ellipse2D$Float. (- x size) (- y (* size 1.2)) (* size 2) (* size 0.4))
-                       ; jaw line
-                       (Ellipse2D$Float. (- x size) (- y (* size 1.2)) (* size 2) (* size 2.4)))
-                     ; mouth
-                     (draw/shape-subtract
-                       (Ellipse2D$Float. (- x (* size 0.6)) (+ y (* size 0.2)) (* size 1.2) (* size 0.4))
-                       (Rectangle2D$Float. (- x (* size 0.6)) (+ y (* size 0.1)) (* size 1.2) (* size 0.2)))
-                     ; left eye
-                     (Ellipse2D$Float. (- x (* size 0.7)) (- y (* size 0.6)) (* size 0.6) (* size 0.3))
-                     ; right eye
-                     (Ellipse2D$Float. (+ x (* size 0.1)) (- y (* size 0.6)) (* size 0.6) (* size 0.3)))]
+        mask-shape (mask-shape x y size)]
     (draw/shape g mask-style mask-shape)
     (draw/shape g mask-style-2 mask-shape)))
+
+(defn empty-mask [^Graphics2D g x y size]
+  (let [mask-shape (mask-shape x y size)]
+    (draw/shape g (draw/shape-style (draw/rgb 0 0 0 100) 1.5 (draw/rgb 0 0 0 25)) mask-shape)))
 
 (defn move [^Graphics2D g x y distance]
   (let [move-style (draw/shape-style Color/BLACK 1.0 Color/GREEN)
@@ -141,8 +147,16 @@
 
     (draw/shape g (draw/line-style 1.5) move-shape)))
 
-(defn shield [g x y size]
+(defn star
+  ([size point-count] (star size point-count 1))
+  ([size point-count pointiness]
+   (let [point-shape (draw/poly [[0 (- (* size pointiness))]
+                                 [(* size 1/3) 0]
+                                 [(* size -1/3) 0]])]
+     (apply draw/shape-add (for [theta (range 0 util/TAU (/ util/TAU point-count))]
+                             (draw/rotate point-shape theta))))))
 
+(defn shield [g x y size & [shield-count]]
   (let [cutout (util/mm->px (/ size 10))
         shape (draw/shape-subtract
                 (draw/shape-add
@@ -175,11 +189,10 @@
                                         (+ (* 2 cutout) inset inset) (+ (* 2 cutout) inset inset))
                       (Ellipse2D$Float. (- x (- size) cutout inset) (- y size cutout inset)
                                         (+ (* 2 cutout) inset inset) (+ (* 2 cutout) inset inset)))
-
         castle-shape (draw/shape-subtract
                        (Rectangle2D$Float. (- x size) (- y size) (* 2 size) (* 3 size)) ; block
                        (Rectangle2D$Float. (- x size) (- y size) (* 2 size) (* 0.7 size)) ; top
-                       (Rectangle2D$Float. (- x size) (+ y ) (* 2 size) (* 0.1 size)) ; line
+                       (Rectangle2D$Float. (- x size) (+ y) (* 2 size) (* 0.1 size)) ; line
                        (Rectangle2D$Float. (- x size) (+ y (* 0.3 size)) (* 2 size) (* 0.1 size)) ; line
                        (Rectangle2D$Float. (- x size) (+ y (* 0.6 size)) (* 2 size) (* 0.1 size)) ; line
                        (Rectangle2D$Float. (- x size) (+ y (* 0.9 size)) (* 2 size) (* 0.1 size)) ; line
@@ -188,26 +201,12 @@
                        (Rectangle2D$Float. (+ x (* 0.1 size)) (- y (* 0.3 size)) (* 0.2 size) (* 0.1 size)) ; castelations
                        ; sides
                        (Ellipse2D$Float. (- x (* size 3)) (- y (* size 1.5)) (* 2.6 size) (* 3 size))
-                       (Ellipse2D$Float. (+ x (* size 3) (- (* 2.6 size))) (- y (* size 1.5)) (* 2.6 size) (* 3 size))
-                       )
-
-        point-shape (draw/poly [[0 (* size -0.3)]
-                                [(* size 0.1) 0]
-                                [(* size -0.1) 0]])
-        star-shape (draw/shape-add
-                     (draw/rotate point-shape (* util/TAU 0/5))
-                     (draw/rotate point-shape (* util/TAU 1/5))
-                     (draw/rotate point-shape (* util/TAU 2/5))
-                     (draw/rotate point-shape (* util/TAU 3/5))
-                     (draw/rotate point-shape (* util/TAU 4/5)))
-
+                       (Ellipse2D$Float. (+ x (* size 3) (- (* 2.6 size))) (- y (* size 1.5)) (* 2.6 size) (* 3 size)))
         draw-star (fn [g x y]
                     (draw/shape g (draw/shape-style Color/WHITE
                                                     (* 0.6 (/ size 20))
                                                     Color/YELLOW)
-                                (draw/translate star-shape x y)))
-
-        ]
+                                (draw/translate (star (* size 0.3) 4) x y)))]
 
     (draw/with-clip g shape
       (doseq [n (range (* 2 size))]
@@ -221,24 +220,189 @@
           (draw/line g (draw/line-style 1 color)
                      (+ x (- size) n) (- y size) (+ x (- size) n) (+ y size size))))
 
-       (draw/line g (draw/line-style (* 0.7 size) Color/BLUE)
-                 (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
-                 (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
+      (if shield-count
+        #_(draw/text-shape
+            g
+            (draw/styles text-style-price
+                         (draw/shape-style (draw/rgb 255 255 255 175) 3
+                                           Color/BLACK))
+            (str shield-count) x (+ y (util/mm->px 0.8)))
+        (draw/text g text-style-price
+                   (str shield-count) x (+ y (util/mm->px 0.8)))
+        (do
+          (draw/line g (draw/line-style (* 0.7 size) Color/BLUE)
+                     (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
+                     (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
 
-      (draw/line g (draw/line-style (* 0.5 size) Color/BLACK)
-                 (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
-                 (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
+          (draw/line g (draw/line-style (* 0.5 size) Color/BLACK)
+                     (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
+                     (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
 
-      (draw-star g (- x (* 0.4 size)) (+ (+ y (* 0.1 size)) (* 0.5 size)))
-      (draw-star g (- x (* 0.0 size)) (+ (+ y (* 0.1 size)) (* 0.0 size)))
-      (draw-star g (+ x (* 0.4 size)) (- (+ y (* 0.1 size)) (* 0.5 size))))
+          (draw-star g (- x (* 0.4 size)) (+ (+ y (* 0.1 size)) (* 0.5 size)))
+          (draw-star g (- x (* 0.0 size)) (+ (+ y (* 0.1 size)) (* 0.0 size)))
+          (draw-star g (+ x (* 0.4 size)) (- (+ y (* 0.1 size)) (* 0.5 size))))))
 
     (draw/shape g (draw/line-style 1.5) shape)
     (draw/shape g (draw/line-style 0.6 Color/YELLOW) shape-inner)
 
     ))
 
-;(defn damage [g ])
+(defn damage [g x y damage]
+  (let [size 35
+        points 9
+        pointiness 0.7
+        star-1 (star size points pointiness)
+        star-2 (draw/rotate star-1 (/ util/TAU (* points 2)))]
+
+    (draw/shape g (draw/line-style 3) (draw/translate star-1 x y))
+    (draw/shape g (draw/line-style 3) (draw/translate star-2 x y))
+
+    (draw/shape g
+                (draw/shape-style Color/RED 1.5 Color/ORANGE)
+                (draw/translate star-1 x y))
+    (draw/shape g
+                (draw/shape-style Color/RED 1.5 Color/ORANGE)
+                (draw/translate star-2 x y))
+
+    (draw/with-clip g (draw/translate star-2 x y)
+      (doseq [p (range 0 1 (/ 1 size))]
+        (draw/circle g (draw/line-style 1 (draw/rgb-lerp Color/YELLOW Color/RED p))
+                     x y (* p size))))
+
+    (draw/text g text-style-price (str damage) x y)))
+
+(defn attack-range [g x y attack-range]
+
+  (let [size 20
+        arrow-head-size 9
+        impact-point-x (+ x size -5)
+        impact-point-y (+ y size)
+        arc (draw/shape-subtract
+              (Ellipse2D$Float. (- x size) (- y size) (* 2 size) (* 4 size))
+              (Rectangle2D$Float. (- x size) (+ y size) (* 2 size) (* 2 size)))
+        arrow (draw/shape-add
+                (draw/shape-subtract
+                  (Ellipse2D$Float. (- x size) (- y size) (* 2 size) (* 4 size))
+                  (Ellipse2D$Float. (+ (- x size) 2) (+ (- y size) 5) (- (* 2 size) 10) (- (* 4 size) 10))
+                  (Rectangle2D$Float. (- x size) (+ y size) (* 2 size) (* 2 size))
+                  (Rectangle2D$Float. x (+ y size -6) (* 2 size) (* 2 size)))
+                (draw/poly [[(+ impact-point-x) (+ y size)]
+                            [(+ impact-point-x arrow-head-size) (+ impact-point-y (- arrow-head-size))]
+                            [(+ impact-point-x (- arrow-head-size)) (+ impact-point-y (- arrow-head-size))]]))]
+
+    (draw/shape g (draw/shape-style Color/BLACK 1 (draw/rgb 255 200 200)) arc)
+    (draw/shape g (draw/shape-style Color/RED 1 Color/ORANGE)
+                (Ellipse2D$Float. (- impact-point-x 10) (- impact-point-y 4)
+                                  20 8))
+    (draw/shape g (draw/shape-style Color/BLACK 1 Color/MAGENTA) arrow)
+
+    )
+
+
+  (draw/text g text-style-price (str attack-range) (- x 3) (+ y 3))
+  )
+
+(defn cake [g x y size & [outline-width]]
+  (let [y (- y (* size 1/2))
+        layer (fn [y height]
+                (draw/shape-add
+                  (Ellipse2D$Float. (- x size) (- y (* size 1/2)) (* size 2) size)
+                  (Ellipse2D$Float. (- x size) (+ (- y (* size 1/2)) height) (* size 2) size)
+                  (Rectangle2D$Float. (- x size) y (* size 2) height)))
+        cake-color (draw/rgb 200 100 0)
+        highlight-color (draw/rgb 255 200 0)
+        icing-color (draw/rgb 150 75 0)
+        detail-color (draw/rgb 75 50 0)
+        cutout (draw/shape-subtract
+                 (Rectangle2D$Float. x y (* size 2) (* size 2))
+                 (draw/poly [[x y]
+                             [(+ x (* size 4/9)) (+ y (* size 4/9))]
+                             [(+ x (* size 4/9)) (+ y (* size 2))]
+                             [x (+ y (* size 2))]]))
+        cake (draw/shape-subtract
+               (layer y size)
+               cutout)]
+
+    (draw/with-clip g cake
+      (draw/shape g (draw/shape-style icing-color 3 cake-color) (layer (+ y (* size 2/3)) (* size 1/3)))
+      (draw/shape g (draw/shape-style icing-color 3 cake-color) (layer (+ y (* size 1/3)) (* size 1/3)))
+      (draw/shape g (draw/shape-style icing-color 3 cake-color) (layer (+ y (* size 0/3)) (* size 1/3)))
+      (draw/shape g (draw/shape-style nil 3 icing-color) (layer y 0)))
+
+    (doseq [p (range 0 1 1/6)
+            yf (map #(- % 1) [(* size 2/3)
+                              (* size 1/3)
+                              (* size 0/3)])]
+      (let [xf (* size p)]
+        (draw/with-clip g (Rectangle2D$Float. (- x (* size 1/2) (/ xf 2))
+                                              (+ (- y (* size 1/5)) yf)
+                                              xf
+                                              size)
+          (draw/shape g (draw/line-style 1 (draw/rgb-lerp highlight-color icing-color p))
+                      (Ellipse2D$Float. (- x size) (+ (- y (* size 1/2)) yf) (* size 2) size)))))
+    (draw/with-clip g cutout
+      (draw/shape g (draw/shape-style Color/BLACK 1 cake-color)
+                  (Rectangle2D$Float. x y size size))
+      (draw/line g (draw/line-style 3 icing-color BasicStroke/CAP_BUTT BasicStroke/JOIN_BEVEL) x y (+ x size) y)
+      (draw/line g (draw/line-style 3 icing-color BasicStroke/CAP_BUTT BasicStroke/JOIN_BEVEL) x (+ y (* size 1/3)) (+ x size) (+ y (* size 1/3)))
+      (draw/line g (draw/line-style 3 icing-color BasicStroke/CAP_BUTT BasicStroke/JOIN_BEVEL) x (+ y (* size 2/3)) (+ x size) (+ y (* size 2/3))))
+
+    (draw/shape g (draw/line-style 1 detail-color) cake)
+    (draw/shape g (draw/line-style (or outline-width 1.5)) (draw/shape-add cake (Rectangle2D$Float. x y size size)))))
+
+(defn flag [g x y size pole-length]
+  (let [length (* size 2)
+        height (* size 1)
+        flag-shape (draw/translate
+                     (draw/shape-subtract
+                       (draw/poly
+                         (concat
+                           (draw/bezier [x (- y height)]
+                                        [(+ x (* length 1/2)) (- y height)]
+                                        [(+ x (* length 2/3)) (- y (* height 1/2))]
+                                        [(+ x (* length 3/3)) (- y (* height 1/2))]
+                                        10)
+                           (draw/bezier [(+ x (* length 3/3)) (- y (* height 1/2))]
+                                        [(+ x (* length 2/3)) (- y (* height 1/2))]
+                                        [(+ x (* length 1/2)) y]
+                                        [x y]
+                                        10)))
+                       (draw/ellipse (- x (* size 1/6)) (- y height) (* size 1/3) (* size)))
+                     (util/mm->px 1)
+                     0)
+        star-shape (draw/translate (star (* size 1/3) 5) (+ x (* length 1/3)) (- y (* height 1/2)))]
+
+    (draw/line g (draw/line-style 7 Color/BLACK) x (- y height) x (+ y (* height pole-length)))
+    (draw/line g (draw/line-style 3 Color/WHITE #_(draw/rgb 100 50 0)) x (- y height) x (+ y (* height pole-length)))
+
+    (draw/with-clip g flag-shape
+      (doseq [x (range x (+ x length))]
+        (draw/line g (draw/line-style 1 (draw/rgb-lerp
+                                          (draw/rgb 220 100 220)
+                                          (draw/rgb 255 100 200)
+                                          ;Color/ORANGE
+                                          ;Color/PINK
+                                          (Math/abs (Math/sin (/ x (/ size 3))))))
+                   x (- y height)
+                   x y)))
+    #_(draw/with-clip g star-shape
+      (doseq [x (range x (+ x length))]
+        (draw/line g (draw/line-style 1 (draw/rgb-lerp Color/WHITE
+                                                       Color/YELLOW
+                                                       (Math/abs (Math/sin (/ x (/ size 3))))))
+                   x (- y height)
+                   x y)))
+
+    #_(draw/shape g (draw/line-style 1) star-shape)
+
+    (cake g (+ x (* length 0.3) (util/mm->px 1)) (- y (* height 1/2)) (* (/ 13 50) size) 1.25)
+
+
+    (draw/shape g (draw/line-style 2)
+      flag-shape)
+    )
+
+  )
 
 (do ; test block
 
@@ -263,11 +427,26 @@
   (role-mask g 40 100 20)
   (role-mask g 80 100 15)
   (role-mask g 120 100 10)
-  (move g 40 160 4)
+  (empty-mask g 200 100 20)
+  (move g 40 160 1)
+  (move g 100 160 2)
+  (move g 160 160 3)
+  (move g 220 160 4)
   (shield g 40 220 20)
-  (shield g 120 220 40)
+  (shield g 120 220 30)
   (shield g 185 220 15)
   (shield g 220 220 10)
+  (damage g 40 300 1)
+  (damage g 100 300 2)
+  (damage g 160 300 3)
+  (attack-range g 40 360 1)
+  (attack-range g 100 360 2)
+  (attack-range g 160 360 3)
+
+  (cake g 300 40 20)
+  (cake g 300 120 40)
+
+  (flag g 300 350 50 1/2)
 
   (refresh-fn)
 

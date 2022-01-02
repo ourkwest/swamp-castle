@@ -1,11 +1,12 @@
 (ns domination.support.draw
   (:require
     [domination.support.util :as util]
+    [domination.support.protocols :as protocols]
     [clojure.java.io :as io])
   (:import
-    [java.awt Polygon BasicStroke Font Graphics2D Color]
+    [java.awt Polygon BasicStroke Font Graphics2D Color RenderingHints]
     (java.awt.font TextLayout)
-    (java.awt.geom Area AffineTransform)))
+    (java.awt.geom Area AffineTransform Rectangle2D Rectangle2D$Double Ellipse2D$Double)))
 
 
 (defn rgb
@@ -54,10 +55,6 @@
 (def font-regular (Font/createFont Font/TRUETYPE_FONT (io/input-stream (io/resource "fonts/ah/AtkinsonHyperlegible-Regular.ttf"))))
 (def font-bold (Font/createFont Font/TRUETYPE_FONT (io/input-stream (io/resource "fonts/ah/AtkinsonHyperlegible-Bold.ttf"))))
 
-(defprotocol Style
-  (prepare-for-draw [this ^Graphics2D g] "Returns a boolean")
-  (prepare-for-fill [this ^Graphics2D g] "Returns a boolean"))
-
 #_(defmacro style [draw-form fill-form]
   `(reify Style
     (prepare-for-draw [_ ^Graphics2D g#]
@@ -66,7 +63,7 @@
       ~@fill-form)))
 
 (def default-style
-  (reify Style
+  (reify protocols/Style
     (prepare-for-draw [_ g]
       (.setColor g Color/BLACK)
       (.setStroke g (BasicStroke. 1))
@@ -76,18 +73,18 @@
       false)))
 
 (defn styles [& styles]
-  (reify Style
+  (reify protocols/Style
     (prepare-for-draw [_ g]
-      (some identity (mapv #(prepare-for-draw % g) (cons default-style styles))))
+      (some identity (mapv #(protocols/prepare-for-draw % g) (cons default-style styles))))
     (prepare-for-fill [_ g]
-      (some identity (mapv #(prepare-for-fill % g) (cons default-style styles))))))
+      (some identity (mapv #(protocols/prepare-for-fill % g) (cons default-style styles))))))
 
 (defn line-style
   ([] (line-style 1))
   ([width] (line-style width Color/BLACK))
   ([width color] (line-style width color BasicStroke/CAP_ROUND BasicStroke/JOIN_ROUND))
   ([width color cap join]
-   (reify Style
+   (reify protocols/Style
      (prepare-for-draw [_ g]
        (.setColor g color)
        (.setStroke g (BasicStroke. width cap join))
@@ -95,11 +92,19 @@
      (prepare-for-fill [_ _]
        false))))
 
+(defn fill-style [fill-paint]
+  (reify protocols/Style
+    (prepare-for-draw [_ _g]
+      false)
+    (prepare-for-fill [_ g]
+      (.setPaint g fill-paint)
+      true)))
+
 (defn shape-style [stroke-color stroke-width fill-paint]
-  (reify Style
+  (reify protocols/Style
     (prepare-for-draw [_ g]
       (.setColor g stroke-color)
-      (.setStroke g (BasicStroke. stroke-width))
+      (.setStroke g (BasicStroke. stroke-width BasicStroke/CAP_ROUND BasicStroke/JOIN_ROUND))
       true)
     (prepare-for-fill [_ g]
       (.setPaint g fill-paint)
@@ -108,7 +113,7 @@
 (defn text-style
   ([font-size color] (text-style font-size color false))
   ([font-size color bold?]
-   (reify Style
+   (reify protocols/Style
      (prepare-for-draw [_ g]
        (.setFont g (.deriveFont (if bold? font-bold font-regular) (float font-size)))
        (.setColor g color)
@@ -123,6 +128,13 @@
 (def style-player-4 (shape-style Color/BLACK 1 Color/RED))
 
 
+(defn shape-intersect
+  ([shape-a shape-b]
+   (doto (Area. shape-a)
+     (.intersect (Area. shape-b))))
+  ([shape-a shape-b & more-shapes]
+   (reduce shape-intersect (shape-intersect shape-a shape-b) more-shapes)))
+
 (defn shape-subtract
   ([shape-a shape-b]
    (doto (Area. shape-a)
@@ -136,6 +148,29 @@
      (.add (Area. shape-b))))
   ([shape-a shape-b & more-shapes]
    (reduce shape-add (shape-add shape-a shape-b) more-shapes)))
+
+(defn v+ [[x1 y1] [x2 y2]]
+  [(+ x1 x2) (+ y1 y2)])
+
+(defn v- [[x1 y1] [x2 y2]]
+  [(- x1 x2) (- y1 y2)])
+
+(defn v* [[x y] f]
+  [(* x f) (* y f)])
+
+(defn vlerp [a b p]
+  (let [q (- 1 p)]
+    (v+ (v* a q) (v* b p))))
+
+(defn bezier [a b c d n]
+  (for [p (range 0 1.00001 (/ 1 n))]
+    (let [e (vlerp a b p)
+          f (vlerp b c p)
+          g (vlerp c d p)
+          h (vlerp e f p)
+          i (vlerp f g p)
+          j (vlerp h i p)]
+      j)))
 
 (defn poly
   ([x y r n angle] (poly x y r n angle 1))
@@ -160,39 +195,56 @@
         xs (map #(-> % Math/sin (* r) (+ x)) angles)
         ys (map #(-> % Math/cos (* r aspect-ratio) (+ y)) angles)
         poly (Polygon. (int-array xs) (int-array ys) (count xs))]
-    (when (prepare-for-fill style g)
+    (when (protocols/prepare-for-fill style g)
       (.fill g poly))
-    (when (prepare-for-draw style g)
+    (when (protocols/prepare-for-draw style g)
       (.draw g poly))))
 
 (defn line [g style xa ya xb yb]
-  (when (prepare-for-draw style g)
+  (when (protocols/prepare-for-draw style g)
     (.drawLine g xa ya xb yb)))
 
 (defn text [^Graphics2D g style ^String string x y]
-  (when (prepare-for-draw style g)
+  (when (protocols/prepare-for-draw style g)
     (let [font (.getFont g)
+          x-offset (case string
+                     "1" (* (.getSize font) -1/16)
+                     0)
           frc (.getFontRenderContext g)
           text-layout (TextLayout. string font frc)
           bounds (.getPixelBounds text-layout frc 0 0)
           gx (- x (.getX bounds) (/ (.getWidth bounds) 2))
           gy (- y (.getY bounds) (/ (.getHeight bounds) 2))]
-      (.draw text-layout g (float gx) (float gy)))))
+      (.draw text-layout g (float (+ gx x-offset)) (float gy)))))
+
+(defn shape [^Graphics2D g style shape]
+  (when (protocols/prepare-for-fill style g)
+    (.fill g shape))
+  (when (protocols/prepare-for-draw style g)
+    (.draw g shape)))
+
+(defn text-shape [^Graphics2D g style ^String string x y]
+  (when (protocols/prepare-for-draw style g)
+    (let [font (.getFont g)
+          x-offset (case string
+                     "1" (* (.getSize font) -1/16)
+                     0)
+          frc (.getFontRenderContext g)
+          text-layout (TextLayout. string font frc)
+          bounds (.getPixelBounds text-layout frc 0 0)
+          gx (- x (.getX bounds) (/ (.getWidth bounds) 2))
+          gy (- y (.getY bounds) (/ (.getHeight bounds) 2))]
+      (shape g style (.getOutline text-layout (AffineTransform/getTranslateInstance (float (+ gx x-offset)) (float gy))))
+      #_(.draw g (.getOutline text-layout (AffineTransform/getTranslateInstance (float (+ gx x-offset)) (float gy)))))))
 
 (defn circle [^Graphics2D g style x y r]
   (let [gx (- x r)
         gy (- y r)
         size (* 2 r)]
-    (when (prepare-for-fill style g)
+    (when (protocols/prepare-for-fill style g)
       (.fillArc g gx gy size size 0 360))
-    (when (prepare-for-draw style g)
+    (when (protocols/prepare-for-draw style g)
       (.drawArc g gx gy size size 0 360))))
-
-(defn shape [^Graphics2D g style shape]
-  (when (prepare-for-fill style g)
-    (.fill g shape))
-  (when (prepare-for-draw style g)
-    (.draw g shape)))
 
 (defn translate [shape x y]
   (doto (Area. shape)
@@ -209,3 +261,41 @@
        ~@body
        (finally
          (.setClip ~g pre-clip#)))))
+
+(defmacro with-transform [g transform & body]
+  `(let [pre-transform# (.getTransform ~g)]
+     (try
+       (.setTransform ~g ~transform)
+       ~@body
+       (finally
+         (.setTransform ~g pre-transform#)))))
+
+(defn shade-highlight [p]
+  (+ (/ (+ (Math/sin (* (- p 1/4) util/TAU)) 1) 2.5)
+     (/ (max (Math/tan (* (- p 1/6) util/TAU)) 0) 60)))
+
+(defn shade-lowlight [p]
+  (/ (Math/sin (* (+ p 1/4) util/TAU)) 2.5))
+
+(defn shade [g x y size color shade-fn]
+  (doseq [p (range 0 1 (/ 1 (* 2 size)))]
+    (let [n (* p 2 size)
+          cf (shade-fn p)
+          c (if (pos? cf)
+              (rgb-lerp color Color/WHITE cf)
+              (rgb-lerp color Color/BLACK (- cf)))]
+      (line g (line-style 1 c) (+ x n) y x (+ y n)))))
+
+(defmacro with-new-image [[graphics-symbol image-form] & forms]
+  `(let [image# ~image-form
+         ~graphics-symbol (.getGraphics image#)]
+     (.setRenderingHint ~graphics-symbol RenderingHints/KEY_ANTIALIASING RenderingHints/VALUE_ANTIALIAS_ON)
+     (.setRenderingHint ~graphics-symbol RenderingHints/KEY_RENDERING RenderingHints/VALUE_RENDER_QUALITY)
+     ~@forms
+     image#))
+
+(defn rectangle [x y w h]
+  (Rectangle2D$Double. x y w h))
+
+(defn ellipse [x y w h]
+  (Ellipse2D$Double. x y w h))

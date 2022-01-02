@@ -44,7 +44,7 @@
    (make-role "Archer"          2     2     nil   nil    3     3 [0, 255, 255])
    (make-cake "Chocolate Cake"  nil   nil   nil   nil    nil   5 [255 50 200])
    (make-role "Smithy"          1     nil   nil   2      nil   6 [100, 100, 255])
-   (make-role "Knight"          4     3     nil   nil    nil   8 [255 50 50])
+   (make-role "Knight"          4     3     nil   nil    nil   8 [255 0 0])
 
    ])
 

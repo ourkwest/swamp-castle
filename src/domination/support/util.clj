@@ -10,6 +10,7 @@
 
 (def pixels-per-mm 4)
 (defn mm->px [mm] (* mm pixels-per-mm))
+(defn px->mm [px] (/ px pixels-per-mm))
 
 (def minion-size (mm->px minion-size-mm))
 (def shield-size (mm->px shield-size-mm))
