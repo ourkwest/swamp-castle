@@ -3,7 +3,8 @@
             [board-game.support.data :as data]
             [board-game.support.symbol :as symbol]
             [board-game.support.util :as util]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [board-game.support.texture :as texture])
   (:import
     [java.awt Graphics2D Color Font]
     [java.awt.geom Ellipse2D$Double AffineTransform]
@@ -141,8 +142,8 @@
     (let [steps (case (count symbols)
                   0 []
                   1 [0]
-                  2 [(- (* util/TAU 1/8)) (* util/TAU 1/8)]
-                  3 [(- (* util/TAU 1/6)) 0 (* util/TAU 1/6)])]
+                  2 [(- (* util/TAU 1/12)) (* util/TAU 1/12)]
+                  3 [(- (* util/TAU 10/68)) 0 (* util/TAU 10/68)])]
       (doseq [[theta sym] (map vector
                                steps
                                symbols)]
@@ -155,7 +156,10 @@
           draw-text (fn [text-size y-offset]
                       (draw/shape g
                                   (draw/shape-style line-color 1 color)
-                                  (draw/translate (draw/text->shape g (draw/text-style text-size Color/BLACK :bold!) label)
+                                  (draw/translate (draw/text->shape g (draw/text-style text-size Color/BLACK :bold!)
+                                                                    (if (= "Chocolate Cake" label)
+                                                                      "Cake"
+                                                                      label))
                                                   cx (- cy (* r y-offset)))))]
       (doseq [line-thickness [1]]
         (case label
@@ -165,11 +169,12 @@
           "Plough" (draw-text 40 1/32)
 
           ;(arc-text g (draw/shape-style line-color line-thickness color) label cx cy 35 60 3/14)
-          "Dagger" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 40 60 3/14)
-          "Bow" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 35 55 3/14)
-          "Chocolate Cake" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 30 55 4/10)
-          "Anvil" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 35 60 3/14)
-          "Sword" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 35 60 3/14))))
+          "Dagger" (draw-text 40 1/32)
+          "Bow" (draw-text 36 3/32)
+          "Chocolate Cake" (draw-text 40 0)
+          "Anvil" (draw-text 40 1/32)
+          "Sword" (draw-text 40 1/32)
+          )))
     ))
 
 (defn draw-bonus-token [^Graphics2D g n]
@@ -183,13 +188,24 @@
     (draw/shape g (draw/fill-style Color/BLACK)
                 (draw/rectangle 0 0 200 200))
     ; TODO: would this look better using a filled shape with a texture rather than a clip? the boundary is a bit ugly
+
+
+    (draw/shape g (draw/shape-style nil 0 (texture/new-texture [g2 [200 200]]
+                                            (draw/shade g2 0 0 200 color draw/shade-highlight)
+                                            ))
+                (draw/text->shape g (draw/text-style 40 color :bold!) "Bonus!" 100 80))
+
     (draw/with-clip g
       (draw/shape-intersect
-        (draw/shape-add
-          (draw/text->shape g (draw/text-style 40 color :bold!) "Bonus!" 100 80)
-          (draw/rectangle 0 100 200 55))
+        ;(draw/shape-add
+          ;(draw/text->shape g (draw/text-style 40 color :bold!) "Bonus!" 100 80)
+        (draw/rectangle 0 100 200 55)
+        ;)
         (or current-clip (draw/rectangle 0 0 200 200)))
       (draw/shade g 0 0 200 color draw/shade-highlight))
+    (draw/shape g (draw/line-style 10) (draw/ellipse 100 100 80))
+    (draw/shape g (draw/line-style 15) (draw/ellipse 100 100 90))
+    (draw/shape g (draw/line-style 55) (draw/ellipse 100 100 100))
     (draw/text g (draw/text-style 40 Color/BLACK :bold!) "+" 75 127))
   (case n
     0 (symbol/move g 115 127 1)

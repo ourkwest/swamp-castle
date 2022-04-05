@@ -560,15 +560,17 @@
       (.setColor g (Color. 0 (int (+ 100 (rand 155))) 0 30))
       (.fill g (polygon gx1 gy1 (* hex-radius 0.05) 10 0)))))
 
-(defn render-shield [^Graphics2D g x y]
+(defn render-shield [^Graphics2D g x y quantity]
   (symbol/shield g
                  (+ x (* hex-radius 0.5))
                  (+ y (* hex-radius 0.25))
-                 (inc (* hex-radius 1/5)))
+                 (inc (* hex-radius 1/5))
+                 quantity)
   (symbol/shield g
                  (+ x (* hex-radius 0.5))
                  (+ y (* hex-radius 0.25))
-                 (* hex-radius 1/5)))
+                 (* hex-radius 1/5)
+                 quantity))
 
 (defmethod render :trmd [^Graphics2D g _terrain x y]
   (set-next-tree-seed)
@@ -578,7 +580,7 @@
     ;(render-token g x y board-color ground-color)
     (render-rubbish g x y)
     (render-leaves g x (+ y (* hex-radius 0.4)) branches)
-    (render-shield g x y)))
+    (render-shield g (int x) y "1")))
 
 (defmethod render :tree [^Graphics2D g _terrain x y]
   (set-next-tree-seed)
@@ -587,7 +589,7 @@
     (when-not *quick?*
       (render-branches g x (+ y (* hex-radius 0.4)) branches)
       (render-leaves g x (+ y (* hex-radius 0.4)) branches))
-    (render-shield g x y)))
+    (render-shield g (int x) y "1")))
 
 (defmethod render :cake [^Graphics2D g _terrain x y]
   (render g :spot x y)
@@ -628,7 +630,7 @@
                 (draw/shape-subtract
                   (draw/ellipse (- x r) (- y r) (* 2 r) (* 2 r))
                   (symbol/mask-shape x (+ y (util/mm->px 0.7)) 40))))
-  (render-shield g x y)
+  (render-shield g (int x) y "∞")
   #_(symbol/empty-mask g x (+ y (util/mm->px 0.7)) 40)
 
   )
@@ -796,9 +798,15 @@
         clip (.getClip g)]
     ;(.setClip g (board-outline 1.0))
 
+    ; Brown edges
     (doseq [[[xa ya] [xb yb]] points
             f (range 0.75 1.1 0.05)]
       (draw-line g xa ya xb yb (Color. 50 40 10 30) (/ hex-radius f)))
+
+    ; Black line
+    (doseq [[[xa ya] [xb yb]] points]
+      (draw-line g xa ya xb yb Color/BLACK (* hex-radius 0.95)))
+
     (doseq [[[xa ya] [xb yb]] points]
       (draw-line g xa ya xb yb (Color. 100 100 250 127) (/ hex-radius 1.1)))
     ;(doseq [[[xa ya] [xb yb]] points]

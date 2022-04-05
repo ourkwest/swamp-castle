@@ -230,8 +230,20 @@
                          (draw/shape-style (draw/rgb 255 255 255 175) 3
                                            Color/BLACK))
             (str shield-count) x (+ y (util/mm->px 0.8)))
-        (draw/text g text-style-price
-                   (str shield-count) x (+ y (util/mm->px 0.8)))
+        (do
+
+          #_(draw/line g (draw/line-style (* 0.7 size) (draw/rgb ))
+                     (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
+                     (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
+          (draw/line g (draw/line-style (* 0.7 size) (draw/rgb 75 75 250))
+                     (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
+                     (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
+
+          (doseq [[x-off y-off] [[-1 -1] [1 1] [1 -1] [-1 1]]]
+            (draw/text g (draw/text-style (util/mm->px 10) (draw/rgb 255 255 150 200) true)
+                       (str shield-count) (+ x x-off) (+ y y-off (util/mm->px 0.8))))
+          (draw/text g (draw/text-style (util/mm->px 10) (draw/rgb 0 0 0 255) true)
+                     (str shield-count) x (+ y (util/mm->px 0.8))))
         (do
           (draw/line g (draw/line-style (* 0.7 size) Color/BLUE)
                      (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
@@ -246,7 +258,7 @@
           (draw-star g (+ x (* 0.4 size)) (- (+ y (* 0.1 size)) (* 0.5 size))))))
 
     (draw/shape g (draw/line-style 1.5) shape)
-    (draw/shape g (draw/line-style 0.6 Color/YELLOW) shape-inner)
+    (draw/shape g (draw/line-style 1 Color/YELLOW) shape-inner)
 
     ))
 
@@ -543,6 +555,16 @@
                      0)
         star-shape (draw/translate (star (* size 1/3) 5) (+ x (* length 1/3)) (- y (* height 1/2)))]
 
+    (.setColor g (draw/rgb 0 0 0 20))
+    ;(.setColor g (draw/rgb 255 0 0 100))
+    (doseq [n (range 0 1 1/10)]
+      (.fillArc g
+                (- x (* 0.3 size n))
+                (+ (- y (* 0.25 size n)) (* height pole-length))
+                (* 1.2 size n)
+                (* 0.6 size n)
+                0 360))
+
     (draw/line g (draw/line-style 7 Color/BLACK) x (- y height) x (+ y (* height pole-length)))
     (draw/line g (draw/line-style 3 Color/WHITE #_(draw/rgb 100 50 0)) x (- y height) x (+ y (* height pole-length)))
 
@@ -594,10 +616,21 @@
   (.setColor g Color/WHITE)
   (.fillRect g 0 0 width height)
 
-  (cake g 50 40 20)
-  (cake g 50 120 40)
-  (cake g 400 400 315 10 10)
+  ;(cake g 50 40 20)
+  ;(cake g 50 120 40)
+  ;(cake g 400 400 315 10 10)
 
+  (shield g 40 220 20)
+  (shield g 120 220 30)
+  (shield g 185 220 15)
+  (shield g 220 220 10)
+  (shield g 320 220 (* 120 1/5) 1)
+  (shield g 420 220 (* 120 1/5) "∞")
+
+  (flag g 300 300 50 1/2)
+  (flag g 200 300 40 1/2)
+  (flag g 100 300 30 1/2)
+  (flag g 100 500 30 1.2)
 
   (comment
     (price-label g 8 40 40 80 40)

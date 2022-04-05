@@ -74,7 +74,7 @@
     row))
 
 (defn draw-border [^Graphics2D g]
-  (let [x1 60
+  #_(let [x1 60
         x2 1130
         y1 100
         y2 1630
@@ -132,7 +132,7 @@
       "Hire some " minions "! "
       "Grab some " cake " and use it to woo the Prince in the Castle! "]
 
-     [:heading.center "Pieces"]
+     [:heading.center "Contents"]
      [:list
       [:phrase "These instructions"]
       [:phrase "A game board with a map of the terrain approaching Prince Æcclescrumb's castle"]
@@ -146,7 +146,6 @@
           [:phrase (count moneys) " money tokens: " (string/join ", " moneys)])
         (let [roles (->> characters (remove :money?) (map :label))]
           [:phrase (count roles) " role tokens: " (string/join ", " roles)])]]
-      [:phrase "5 " vps]
       [:phrase "5 optional " bonus-tokens]]
 
      [:graphics {:under true :scale 0.5} draw-border]
@@ -156,7 +155,7 @@
       (fn [^Graphics2D g2d]
         (let [line-height 16
               y-offset 181.5
-              y (fn [lines] (+ y-offset (* line-height lines)))
+              y (fn [lines] (+ y-offset (* line-height (inc lines))))
               x (fn [x n] (+ x (* n 24)))
               token-scale 1/8
               img (fn [x-pos y-pos scale & file-names]
@@ -172,7 +171,7 @@
                "./generated/for-instructions/token_0.png"
                "./generated/for-instructions/token_1.png"
                "./generated/for-instructions/token_2.png")
-          (img 253 (y 9) token-scale
+          (img 238 (y 9) token-scale
                "./generated/for-instructions/token_3.png"
                "./generated/for-instructions/token_4.png"
                "./generated/for-instructions/token_5.png"
@@ -180,8 +179,8 @@
                "./generated/for-instructions/token_7.png"
                "./generated/for-instructions/token_8.png")
           ;(img 50 (y 10) token-scale "./generated/for-instructions/token_6.png")
-          (img 15 (y 10) token-scale "./generated/for-instructions/vp.png")
-          (img 55 (y 11) token-scale
+          ;(img 15 (y 10) token-scale "./generated/for-instructions/vp.png")
+          (img 55 (y 10) token-scale
                "./generated/for-instructions/bonus_0.png"
                "./generated/for-instructions/bonus_1.png"
                "./generated/for-instructions/bonus_2.png"
@@ -191,16 +190,14 @@
 
      [:heading.center "Aim"]
      [:paragraph
-      "The aim of the game is to acquire the most tokens of the Prince's affection (\"" vps "\"). "
-      "These are acquired by having a " minion " on the final row of the board and playing "
+      "The aim of the game is to win Prince Æcclescrumb's affection by sending the most " minions " to woo him with " cake ". "
+      "This is done by having a " minion " on the final row of the board and playing "
       "a " cake " " token " from your hand."]
      [:spacer]
 
      [:heading.center "Setting up"]
      [:paragraph
-      "Choose how many " vps " to play with and place them in a pile. "
-      "It is suggested that you use one more " vp " than there are players, but you can vary this for a shorter or longer game. "
-      "Note: If you pick the same number of " vps " as there are players then a draw is not unlikely. "]
+      "Choose how many slices of " cake " will be required to win the Prince's heart. If in doubt, play first to 2. "]
      [:paragraph
       "Layout the " (count characters) " types of " token " each in their own pile. (Or all in one big pile if you are short on time.) This is the Bank."]
      [:paragraph "Place the coloured player " minions " and " shields " on the piece card. "
@@ -245,11 +242,11 @@
      [:heading.smaller "2. Placing " tokens]
      [:paragraph
       "You may place 1 role " token " on each of your " minions " that are on the board. "
-      "You may only place role " tokens " on your minions (those marked with a brown mask symbol). "
-      "You may not place money " tokens " on your minions. "
+      "You may only place role " tokens " on your " minions " (those " tokens " marked with a brown mask symbol). "
+      "You may not place money " tokens " on your " minions ". "
       "You may only place " cake " " tokens " on " minions " that are on the final row of the board (those marked with the cake symbol). "
       "For each role " token " that you place you may draw another " token " in accordance with the above rules about drawing. "
-      "When you place a " token " you may choose not to draw another " token " if you wish, "
+      "When you place a " token " you may choose " [:chunk.emphasis "not"] " to draw another " token " if you wish, "
       "such as when you know there's something in your " draw-bag " that might be more useful on the following turn."]
 
      [:spacer]
@@ -269,7 +266,7 @@
       [:paragraph
        "When attacking the outcome is determined by the strength of the attack. "
        "Start with the amount of damage dealt by the role " token " making the attack. "
-       "Reduce the damage by 1 if the defending " minion " is on a tree hex bearing a " shield " symbol. "
+       "Reduce the damage by 1 if the defending " minion " is on a tree hex or starting hex bearing a " shield " symbol. "
        "The defending player may then choose to return any number of " shields " that they have to the bank. "
        "For each shield that they choose to return the damage is further reduced by 1. "
        "If the remaining damage is greater than 0 then the defending " minion " is defeated and must be returned to the bank. "]
@@ -295,17 +292,18 @@
       [:heading.smaller "Attacking at Range"]
       [:paragraph "If a " token " has a ranged attack, count the range as if it were movement. "
        "e.g. When an Archer attacks, imagine an arrow starting on the Archer's hex and "
-       "moving up to 3 hexes to reach it's target."]
+       "moving up to 3 hexes to reach it's target. Arrows may pass over other " minions ", rivers and walls."]
 
       [:spacer]
       [:heading.smaller "Chocolate Cake"]
       [:paragraph
-       "Your " minion " is admitted to the castle to seduce Prince Æcclescrumb with a slice of delicious & moist Chocolate Cake. "]
+       "Your " minion " is admitted to the castle to seduce Prince Æcclescrumb on your behalf with a slice of delicious"
+       " & moist Chocolate Cake. "]
       [:paragraph
        "Your " minion " must be on a 'Cake' hex to perform this action. "
        "Your " minion " is completely retired from the game; they are removed from the board and can no longer be bought. "
        "Your " cake " " token " is returned to the bank. "
-       "You receive 1 " vp "."]]
+       "Each time you do this counts towards your victory."]]
 
      [:spacer]
      [:heading.smaller "4. Buying"]
@@ -316,7 +314,9 @@
       "Do not count the money values on role " tokens " that you have not played this turn. "]
      [:paragraph
       "Bought " tokens " are placed in your " discard-bag ". "
-      "Bought " minions " are immediately placed on any unoccupied starting hex marked with an empty mask symbol. "
+      "Bought " minions " are placed in front of you. "
+      "You may place them at any time during this or any of your later turns onto any unoccupied starting hex marked with "
+      "an empty mask symbol. "
       "Bought " shields " are placed in a pile by the player where all other players can see them. "]
 
      [:spacer]
@@ -325,10 +325,13 @@
       "At the end of your turn place all played and unplayed " tokens " from your hand and all newly acquired "
       tokens " into your " discard-bag ". "]
      [:paragraph
-      "If at the end of your turn any of your " minions " are on one of the " (->> data/terrain-map flatten (filter #{:midd :trmd}) count) " central " midden
-      " hexes (marked with a pile of discarded tokens), then you may choose to return any "
-      "number of the discarded " tokens " to the bank instead of to your " discard-bag
-      ", regardless of whether you have used them this turn. "]
+      "If at the end of your turn any of your " minions " are on one of the "
+      (->> data/terrain-map flatten (filter #{:midd :trmd}) count) " central " midden
+      " hexes (marked with a pile of discarded tokens), then you may choose to return some "
+      "of the discarded " tokens " to the bank instead of to your " discard-bag
+      ", regardless of whether you have used them this turn. "
+      [:chunk.emphasis "However"] ", you may only return as many " tokens " to the bank as you have " minions " on the "
+      midden " at the end of your turn."]
 
      [:spacer]
      [:heading.center "Bonus Tokens"]
@@ -355,7 +358,7 @@
                                      (sort-by #(= "Chocolate Cake" (:label (second %)))))]
                     (let [desc [:phrase
                                 (when (= "Chocolate Cake" (:label c))
-                                  [:phrase "Sacrifice this " token " and " minion " for a " vp ". "])
+                                  [:phrase "Sacrifice this " token " and " minion " towards seducing Prince Æcclescrumb. "])
                                 (condp = (:move c)
                                   nil ""
                                   1 [:phrase "You may move this " minion " to an adjacent hex. "]

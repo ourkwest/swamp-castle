@@ -179,8 +179,16 @@
                        :shape   (reduce draw/shape-subtract
                                         (:shape floor)
                                         (map :shape (filter #(-> % :z-order (> (:z-order floor))) instrs)))
-                       :z-order (inc (:z-order floor))}]
-    (concat [outline floor floor-outline] instrs)))
+                       :z-order (inc (:z-order floor))}
+        shadows (for [prop (range 1 1.2 0.01) #_[1.05 1.1 1.15 1.2]]
+                 {:shape (draw/ellipse (- x (* radius prop))
+                                       (- y (* (* radius prop) 2/3) (- (second z-vec)))
+                                       (* 2 (* radius prop))
+                                       (* 4/3 (* radius prop)))
+                  :style (draw/fill-style (draw/rgb 0 0 0 10))
+                  ;:style (draw/fill-style (draw/rgb 255 0 0 255))
+                  :z-order -12000})]
+    (concat shadows [outline floor floor-outline] instrs)))
 
 (defn h-wall-layer [x y length x-size y-size z-size layer last?]
   (let [sections (->> (range x (+ x length) x-size)
@@ -217,8 +225,19 @@
 (defn h-wall [x y length x-size y-size z-size layers]
   (let [bricks (apply concat
                       (for [layer (range layers)]
-                        (h-wall-layer x y length x-size y-size z-size layer (= layer (dec layers)))))]
-    (cons (outline bricks) bricks)))
+                        (h-wall-layer x y length x-size y-size z-size layer (= layer (dec layers)))))
+
+        shadows (for [prop (range 0 1 0.05) #_[1.05 1.1 1.15 1.2]]
+                 {:shape (draw/rectangle x
+                                         (+ y y-size)
+                                         length
+                                         (* prop z-size))
+                  :style (draw/fill-style (draw/rgb 0 0 0 10))
+                  ;:style (draw/fill-style (draw/rgb 255 0 0 255))
+                  :z-order -2})
+
+        ]
+    (cons (outline bricks) (concat shadows bricks))))
 
 (defn v-wall [x y length x-size y-size z-size layers]
   (let [bricks (for [[y1 y2] (->> (range y (+ y length) y-size)
@@ -268,7 +287,9 @@
 
   ;(ring 50 50 [0 5] 10 40 0.8 1 false false)
   (do-instructions g (rings 150 150 [0 5] 20 40 0.8 10))
-  (do-instructions g (rings 250 250 [0 5] 30 60 0.85 10))
+  (do-instructions g (rings 250 150 [0 5] 20 40 0.8 5))
+  (do-instructions g (rings 250 300 [0 5] 30 60 0.85 10))
+  (do-instructions g (rings 100 300 [0 5] 30 60 0.85 5))
 
   (do-instructions g (h-wall 50 50 200 20 12 9 5))
   (do-instructions g (v-wall 50 250 200 20 12 9 5))
