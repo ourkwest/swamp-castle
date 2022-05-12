@@ -53,18 +53,18 @@
    ])
 
 (def terrain-map
-  [[:cake :cake :cake :cake :cake :cake :cake :cake :cake :cake]
-   [:wall :twrr :spot :spot :spot :tree :spot :twrl :wall]
-   [:spot :spot :spot :spot :spot :spot :spot :spot :spot :spot]
-   [:tree :spot :twrl :wall :wall :wall :twrr :spot :spot]
+  [[:spot :cake :free :free :free :free :free :free :cake :spot]
+      [:spot :cake :twrs :free :twrs :free :twrs :cake :tree]
+   [:wall :spot :spot :cake :cake :cake :cake :spot :spot :wall]
+      [:wall :spot :twrl :wall :wall :wall :twrr :spot :wall]
    [:spot :spot :spot :spot :spot :spot :spot :spot :tree :spot]
-   [:tree :spot :spot :midd :trmd :midd :spot :tree :tree]
+      [:tree :spot :spot :midd :trmd :midd :spot :tree :tree]
    [:tree :tree :spot :midd :midd :midd :midd :spot :tree :spot]
-   [:rivr :tree :spot :midd :midd :midd :spot :spot :spot]
+      [:rivr :tree :spot :midd :midd :midd :spot :spot :spot]
    [:spot :brga :spot :spot :spot :spot :spot :spot :spot :spot]
-   [:spot :rivr :rivr :spot :tree :tree :spot :spot :spot]
+      [:spot :rivr :rivr :spot :tree :tree :spot :spot :spot]
    [:spot :spot :tree :rivr :brgb :rivr :rivr :spot :spot :tree]
-   [:spot :tree :tree :spot :spot :tree :brga :spot :tree]
+      [:spot :tree :tree :spot :spot :tree :brga :spot :tree]
    [:spot :spot :tree :spot :spot :spot :spot :rivr :brgb :rivr]
-   [:spot :spot :tree :spot :spot :spot :spot :spot :tree]
+      [:spot :spot :tree :spot :spot :spot :spot :spot :tree]
    [:strt :strt :strt :strt :strt :strt :strt :strt :strt :strt]])

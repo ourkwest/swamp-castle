@@ -352,6 +352,73 @@
     (draw/shape g (draw/line-style 1 detail-color) cake)
     (draw/shape g (draw/line-style (or outline-width 1.5)) (draw/shape-add cake (Rectangle2D$Float. x y size size)))))
 
+(defn vp [g x y size & [with-crown?]]
+  (let [x-spread 0.45
+        r (* size 1/2)
+        r-bit (* r (Math/sqrt 0.5))
+        x1 (- x (* size x-spread))
+        x2 (+ x (* size x-spread))
+        shape (draw/shape-add
+                (draw/ellipse (- x1 0.5) (- y (* 0.1)) r)
+                (draw/ellipse (- x2 0.5) (- y (* 0.1)) r)
+                (draw/poly [[(- x1 r-bit) (+ y r-bit)]
+                            [x y]
+                            [(+ x2 r-bit) (+ y r-bit)]
+                            [x (+ y r-bit r-bit (* size x-spread))]])
+                #_(draw/shape-subtract
+                    (draw/poly x y size 4 0)
+                    (draw/rectangle (- x size) (- y size) (* size 2) size)))
+        highlight (draw/shape-subtract
+                    (draw/ellipse 0 0 (* r-bit 3/3))
+                    (draw/ellipse r-bit r-bit (* r-bit 6/3)))
+        crown-angle 0.3
+        crown-transform (fn [shape]
+                          (-> shape
+                              (draw/rotate crown-angle)
+                              (draw/scale (/ size 20))
+                              (draw/translate (+ x (* size 0.68)) (- y (* size 0.75)))))
+        crown (draw/shape-subtract
+                (draw/rectangle -10 0 20 12)
+                (draw/ellipse -10.5 -8 11 15)
+                (draw/ellipse -0.5 -8 11 15))
+        jewel (draw/ellipse -2 6.5 4 4)
+        j2 (-> jewel (draw/translate -9 0) #_(draw/ellipse -11 6.5 4 4))
+        j3 (-> jewel (draw/translate 9 0) #_(draw/ellipse 7 6.5 4 4))
+        h1 (-> (draw/ellipse -1.5 7 1.5 1.5))
+        h2 (-> h1 (draw/translate -9 0))
+        h3 (-> h1 (draw/translate 9 0))
+        jc (draw/shape-style Color/BLACK 1 (draw/rgb 0 150 0))
+        hc (draw/fill-style (draw/rgb 255 255 255 255))]
+    (draw/shape g (draw/shape-style Color/BLACK 2 Color/RED) shape)
+    (draw/shape g (draw/fill-style (draw/rgb 255 255 255 128))
+      (draw/ellipse (- x1 (* r-bit 1/3)) (- y (* r-bit 1/3)) (* r-bit 1/2)))
+    (draw/shape g (draw/fill-style (draw/rgb 255 255 255 128))
+      (draw/ellipse (- x2 (* r-bit 1/3)) (- y (* r-bit 1/3)) (* r-bit 1/2)))
+    (draw/shape g (draw/fill-style (draw/rgb 255 255 255 150))
+      (draw/translate highlight x2 y))
+    (draw/shape g (draw/fill-style (draw/rgb 255 255 255 150))
+      (draw/translate highlight x1 y))
+    (when with-crown?
+      (draw/shape g (draw/fill-style (draw/rgb 0 0 0 70))
+        (crown-transform (draw/ellipse -10 8 20 7)))
+      (draw/with-clip g (crown-transform crown)
+        (draw/vshade g
+                     [x (- y (* size 1/5))]
+                     (draw/v* [(Math/cos crown-angle) (Math/sin crown-angle)] size)
+                     1
+                     (draw/rgb 230 220 0)
+                     draw/shade-highlight
+                     1.5))
+      (draw/shape g (draw/line-style 2) (crown-transform crown))
+      (draw/shape g jc (crown-transform jewel))
+      (draw/shape g jc (crown-transform j2))
+      (draw/shape g jc (crown-transform j3))
+      (draw/shape g hc (crown-transform h1))
+      (draw/shape g hc (crown-transform h2))
+      (draw/shape g hc (crown-transform h3))
+
+      )))
+
 (defn flag [g x y size pole-length]
   (let [length (* size 2)
         height (* size 1)
@@ -398,7 +465,7 @@
     #_(draw/shape g (draw/line-style 1) star-shape)
 
     (cake g (+ x (* length 0.3) (util/mm->px 1)) (- y (* height 1/2)) (* (/ 13 50) size) 1.25)
-
+    ;(vp g (+ x (* length 0.3) (util/mm->px 1)) (- y (* height 3/5)) (* size 1/3))
 
     (draw/shape g (draw/line-style 2)
       flag-shape)
@@ -451,6 +518,10 @@
   (flag g 300 350 50 1/2)
   (flag g 300 300 40 1/2)
   (flag g 300 250 30 1/2)
+
+  (vp g 250 350 20 :with-crown!)
+  ;(vp g 250 280 40 :with-crown!)
+  (vp g 250 280 50 :with-crown!)
 
   (refresh-fn)
 

@@ -115,6 +115,14 @@
               y (range (- slab-height) (+ 100 slab-height) slab-height)]
         (draw/shape g (dark-stone-style) (draw/rectangle (+ x (if (odd? (/ y slab-height)) slab-height 0)) y slab-width slab-height))))))
 
+(def light-stone-slabs
+  (let [slab-width 20
+        slab-height 10]
+    (new-texture [^Graphics2D g [200 200]]
+      (doseq [x (range (- slab-width) (+ 200 slab-width) slab-width)
+              y (range (- slab-height) (+ 200 slab-height) slab-height)]
+        (draw/shape g (stone-style) (draw/rectangle (+ x (if (odd? (/ y slab-height)) slab-height 0)) y slab-width slab-height))))))
+
 (do ; test block
 
   (require '[see.core :as see])
@@ -137,8 +145,8 @@
   (draw/shape g (draw/fill-style grass) (draw/rectangle 0 0 200 200))
   (draw/shape g (draw/fill-style cake-3) (draw/rectangle 200 0 200 200))
 
-  (draw/shape g (draw/fill-style cake-1) (draw/rectangle 0 200 200 200))
-  (draw/shape g (draw/fill-style cake-2) (draw/rectangle 200 200 200 200))
+  (draw/shape g (draw/fill-style stone-slabs) (draw/rectangle 0 200 200 200))
+  (draw/shape g (draw/fill-style light-stone-slabs) (draw/rectangle 200 200 200 200))
 
 
   (refresh-fn)

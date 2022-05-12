@@ -138,19 +138,49 @@
                  (* scale (/ hex-radius 2))
                  0 360)))))
 
-(defn render-arrow [^Graphics2D g x y]
-  (.setColor g (Color. 50 255 120 30))
-  (let [y-offset (- (/ hex-radius 1.1))]
-    (doseq [i (range 0 (/ hex-radius 3) (/ hex-radius 100))]
-      (.fill g (polygon x (- y y-offset (/ hex-radius 2) i) (- (/ hex-radius 3) i) 3 (/ TAU 6)))
-      (.fill g (Rectangle. (+ (- x (/ hex-radius 6)) i)
-                           (- y y-offset (/ hex-radius 3) (* i 1.5))
-                           (* 2 (- (/ hex-radius 6) i))
-                           hex-radius)))))
+(defn- hyp [x1 y1 x2 y2]
+  (let [x (- x1 x2)
+        y (- y1 y2)]
+    (Math/sqrt (+ (* x x) (* y y)))))
+
+(defn render-arrow-2
+  ([^Graphics2D g x1 y1 x2 y2] (render-arrow-2 g x1 y1 x2 y2 0.56))
+  ([^Graphics2D g x1 y1 x2 y2 shortening]
+   (let [x-diff (- x2 x1)
+         y-diff (- y2 y1)
+         theta (Math/atan2 x-diff y-diff)
+         length (* (Math/sqrt (+ (* x-diff x-diff) (* y-diff y-diff))) shortening)
+         xc (Math/sin theta)
+         yc (Math/cos theta)
+         start [x1 y1]
+         end (stone/v+ start (stone/v* [xc yc] length))
+         v [xc yc]
+         f #(stone/v* % (util/mm->px 20))]
+     ;(println x-diff y-diff xc yc)
+     ;(.setColor g Color/RED)
+     ;(.drawLine g x1 y1 x2 y2)
+     (doseq [p (range 0 1 1/33)]
+       (let [across (stone/v* [yc (- xc)] p)
+             along (stone/v* v p)
+             head (draw/poly [end
+                              (-> end (stone/v- (f along)) (stone/v+ (stone/v* (f across) 0.57)))
+                              (-> end (stone/v- (f along)) (stone/v- (stone/v* (f across) 0.57)))])
+             shaft (draw/poly [(-> end (stone/v- (f along)) (stone/v+ (stone/v* (f across) 2/6)))
+                               (-> end (stone/v- (f along)) (stone/v- (stone/v* (f across) 2/6)))
+                               (-> end (stone/v- (f along)) (stone/v- (stone/v* along length)) (stone/v- (stone/v* across 2/6)))
+                               (-> end (stone/v- (f along)) (stone/v- (stone/v* along length)) (stone/v+ (stone/v* across 2/6)))])
+             arrow (draw/shape-add head shaft)]
+         #_(println [[x2 y2]
+                     (-> [x2 y2] (stone/v- along) (stone/v+ (stone/v* across 0.57)))
+                     (-> [x2 y2] (stone/v- along) (stone/v- (stone/v* across 0.57)))])
+         ;(draw/shape g (draw/fill-style Color/RED) head)
+         ;(draw/shape g (draw/fill-style Color/RED) shaft)
+         (draw/shape g (draw/fill-style (Color. 50 255 120 30)) arrow))))))
 
 (defn render-arrow
   ([^Graphics2D g x y] (render-arrow g x y 0))
-  ([^Graphics2D g x y theta]
+  ([^Graphics2D g x y theta] (render-arrow g x y theta 1))
+  ([^Graphics2D g x y theta length]
    (let [xc (* (util/mm->px -20) (Math/sin theta))
          yc (* (util/mm->px -20) (Math/cos theta))
          v [xc yc]]
@@ -162,8 +192,8 @@
                               (-> [x y] (stone/v- v) (stone/v- (stone/v* n 0.57)))])
              shaft (draw/poly [(-> [x y] (stone/v- v) (stone/v+ (stone/v* n 2/6)))
                                (-> [x y] (stone/v- v) (stone/v- (stone/v* n 2/6)))
-                               (-> [x y] (stone/v- v) (stone/v- v) (stone/v- (stone/v* n 2/6)))
-                               (-> [x y] (stone/v- v) (stone/v- v) (stone/v+ (stone/v* n 2/6)))])
+                               (-> [x y] (stone/v- v) (stone/v- (stone/v* v length)) (stone/v- (stone/v* n 2/6)))
+                               (-> [x y] (stone/v- v) (stone/v- (stone/v* v length)) (stone/v+ (stone/v* n 2/6)))])
              arrow (draw/shape-add head shaft)]
          (draw/shape g (draw/fill-style (Color. 50 255 120 30)) arrow)))))
   #_(.setColor g (Color. 50 255 120 30))
@@ -332,19 +362,25 @@
 (defmulti render (fn [_g terrain _x _y] terrain))
 (defmethod render :default [_ _ _ _] nil)
 
-(defmethod render :spot [^Graphics2D g _terrain x y]
+(defn spot-hex [x y]
   (let [hex1 (polygon x y (* 0.95 hex-radius) 6 0)
         hex2 (polygon x y (* 1.05 hex-radius) 6 (* util/TAU 1/12))
         hex3 (polygon x y (* 1.04 hex-radius) 6 (+ (* util/TAU 1/12) 0.1))
         hex4 (polygon x y (* 1.04 hex-radius) 6 (- (* util/TAU 1/12) 0.1))
         hex5 (polygon x y (* 1.03 hex-radius) 6 (+ (* util/TAU 1/12) 0.2))
-        hex6 (polygon x y (* 1.03 hex-radius) 6 (- (* util/TAU 1/12) 0.2))
-        hex (draw/shape-intersect hex1 hex2 hex3 hex4 hex5 hex6)
-        hex1' (polygon x (- y (* 0.04 hex-radius)) (* 0.95 hex-radius) 6 0)
+        hex6 (polygon x y (* 1.03 hex-radius) 6 (- (* util/TAU 1/12) 0.2))]
+    (draw/shape-intersect hex1 hex2 hex3 hex4 hex5 hex6)))
+
+(defn spot-hex-up [x y]
+  (let [hex1' (polygon x (- y (* 0.04 hex-radius)) (* 0.95 hex-radius) 6 0)
         hex2' (polygon x (- y (* 0.04 hex-radius)) (* 1.05 hex-radius) 6 (* util/TAU 1/12))
         hex3' (polygon x (- y (* 0.04 hex-radius)) (* 1.04 hex-radius) 6 (+ (* util/TAU 1/12) 0.1))
-        hex4' (polygon x (- y (* 0.04 hex-radius)) (* 1.04 hex-radius) 6 (- (* util/TAU 1/12) 0.1))
-        hex-up (draw/shape-intersect hex1' hex2' hex3' hex4')
+        hex4' (polygon x (- y (* 0.04 hex-radius)) (* 1.04 hex-radius) 6 (- (* util/TAU 1/12) 0.1))]
+    (draw/shape-intersect hex1' hex2' hex3' hex4')))
+
+(defmethod render :spot [^Graphics2D g _terrain x y]
+  (let [hex (spot-hex x y)
+        hex-up (spot-hex-up x y)
         outline (draw/shape-add hex hex-up)
         clip (if-let [current-clip (.getClip g)]
                (draw/shape-intersect current-clip outline)
@@ -572,33 +608,60 @@
                  (* hex-radius 1/5)
                  quantity))
 
+(defn render-shield-glow [^Graphics2D g x y]
+  (let [hex (spot-hex x y)
+        scaled-hex #(-> hex
+                        (draw/scale %)
+                        (draw/center x y))]
+    (doseq [n (range 0 1 0.1)]
+      (draw/shape g (draw/fill-style (draw/rgb 50 200 255 (* n 255)))
+                  (scaled-hex (- 1.1 (* n 0.1)))))))
+
 (defmethod render :trmd [^Graphics2D g _terrain x y]
   (set-next-tree-seed)
   (let [branches (create-branches 1.0 identity)]
+    (render-shield-glow g x y)
     (render g :spot x y)
     (render-branches g x (+ y (* hex-radius 0.4)) branches)
     ;(render-token g x y board-color ground-color)
     (render-rubbish g x y)
     (render-leaves g x (+ y (* hex-radius 0.4)) branches)
-    (render-shield g (int x) y "1")))
+    (render-shield g (int x) y nil)))
 
 (defmethod render :tree [^Graphics2D g _terrain x y]
   (set-next-tree-seed)
   (let [branches (create-branches 1.0 identity)]
+    (render-shield-glow g x y)
     (render g :spot x y)
     (when-not *quick?*
       (render-branches g x (+ y (* hex-radius 0.4)) branches)
       (render-leaves g x (+ y (* hex-radius 0.4)) branches))
-    (render-shield g (int x) y "1")))
+    (render-shield g (int x) y nil)))
 
 (defmethod render :cake [^Graphics2D g _terrain x y]
   (render g :spot x y)
-  (let [x-spread (util/mm->px 23)]
-    (if (even? (x-unpos x y))
-      (render-arrow g (+ x x-spread) (- y (* 1.25 hex-radius))
-                    (* util/TAU -1/12))
-      (render-arrow g (- x x-spread) (- y (* 1.25 hex-radius))
-                    (* util/TAU 1/12))))
+  (let [x-spread (util/mm->px 23)
+        x-raw (x-unpos x y)
+        y-raw (y-unpos y)]
+    (println x y x-raw y-raw)
+    (case (y-unpos y)
+      0 (if (< 5 (x-unpos x y))
+
+          (let [[x2 y2] (xy-pos (- x-raw 2) (dec y-raw))] (render-arrow-2 g x y x2 y2))
+          (let [[x2 y2] (xy-pos (inc x-raw) (dec y-raw))] (render-arrow-2 g x y x2 y2))
+          ;(render-arrow g (- x x-spread x-spread) y (* util/TAU 2/12))
+          ;(render-arrow g (+ x x-spread x-spread) y (* util/TAU 10/12))
+          )
+      1 (if (< 5 (x-unpos x y))
+          (let [[x2 y2] (xy-pos (- x-raw 1) (dec y-raw))] (render-arrow-2 g x y x2 y2))
+          (let [[x2 y2] (xy-pos (+ x-raw 2) (dec y-raw))] (render-arrow-2 g x y x2 y2))
+          #_(render-arrow g (- x x-spread) (- y (* 1.25 hex-radius)) (* util/TAU 1/12))
+          #_(render-arrow g (+ x x-spread) (- y (* 1.25 hex-radius)) (* util/TAU -1/12)))
+      2 #_(if (even? (x-unpos x y))
+          (render-arrow g (- x x-spread) (- y (* 1.25 hex-radius)) (* util/TAU 1/12))
+          (render-arrow g (+ x x-spread) (- y (* 1.25 hex-radius)) (* util/TAU -1/12)))
+      (let [[x2 y2] (xy-pos x-raw (- y-raw 2))] (render-arrow-2 g x y x2 y2))
+      #_(render-arrow g x (- y (* 2 hex-radius)) (* util/TAU 0/12) 2)))
   #_(render-arrow g x (- y (* 1.25 hex-radius))
                   (if (even? (x-unpos x y))
                     [0 (util/mm->px -20)]
@@ -618,19 +681,22 @@
   (symbol/cake g x y (* hex-radius 1/3) 3))
 
 (defmethod render :strt [^Graphics2D g _terrain x y]
+  (render-shield-glow g x y)
   (render g :spot x y)
   ;(.setColor g board-color)
-  (render-arrow g
+  #_(render-arrow g
                 x
                 ;y
                 (+ y (util/mm->px 14)))
+  (let [[x1 y1] (xy-pos (x-unpos x y) (inc (inc (y-unpos y))))]
+    (render-arrow-2 g x1 y1 x y 0.85))
   (let [r (util/mm->px 20)]
     (draw/shape g
                 (draw/shape-style (draw/rgb 0 0 0 100) 1.5 (draw/rgb 0 0 0 25))
                 (draw/shape-subtract
                   (draw/ellipse (- x r) (- y r) (* 2 r) (* 2 r))
                   (symbol/mask-shape x (+ y (util/mm->px 0.7)) 40))))
-  (render-shield g (int x) y "∞")
+  (render-shield g (int x) y nil)
   #_(symbol/empty-mask g x (+ y (util/mm->px 0.7)) 40)
 
   )
@@ -833,6 +899,9 @@
                  (+ y-offset yb)))
     (.setClip g clip)))
 
+(defn push-back [distance instructions]
+  (map #(update % :z-order - distance) instructions))
+
 (defn draw-board []
   (let [^Graphics2D g (.getGraphics image)]
 
@@ -911,7 +980,7 @@
             terrain (get-in terrain-map [iy ix])]
         (render g terrain x y)))
 
-    (let [x-spread (util/mm->px 30)]
+    #_(let [x-spread (util/mm->px 30)]
       (doseq [[x y] (map #(xy-pos % -1) (range -1 10 2))]
         ;(println x y)
         #_(stone/do-instructions g
@@ -924,27 +993,117 @@
 
     (let [instructions
           (concat
+
+            [
+             {:shape (draw/poly [(xy-pos 1 -1)
+                                 (draw/v+ (xy-pos 2 1) [0 (util/mm->px -5)])
+                                 (draw/v+ (xy-pos 6 1) [0 (util/mm->px -5)])
+                                 (xy-pos 7 -1)])
+              :style (draw/fill-style texture/light-stone-slabs)
+             :z-order -50000}
+             {:shape   (draw/poly [(draw/v+ (xy-pos 2 1) [0 (util/mm->px -18)])
+                                   (draw/v+ (xy-pos 2 1) [0 (util/mm->px -8)])
+                                   (draw/v+ (xy-pos 6 1) [0 (util/mm->px -8)])
+                                   (draw/v+ (xy-pos 6 1) [0 (util/mm->px -18)])])
+              :style   (draw/fill-style texture/stone-slabs)
+              :z-order 8500 #_1500}
+             {:shape   (draw/poly [(draw/v+ (xy-pos 1 -1) [(util/mm->px 7)  (util/mm->px -10)])
+                                   (draw/v+ (xy-pos 1 -1) [(util/mm->px -7) (util/mm->px -10)])
+                                   (draw/v+ (xy-pos 2 1) [(util/mm->px -7) (util/mm->px -10)])
+                                   (draw/v+ (xy-pos 2 1) [(util/mm->px 7) (util/mm->px -10)])])
+              :style   (draw/fill-style texture/stone-slabs)
+              :z-order 6500}
+             {:shape   (draw/poly [(draw/v+ (xy-pos 7 -1) [(util/mm->px 7) (util/mm->px -10)])
+                                   (draw/v+ (xy-pos 7 -1) [(util/mm->px -7) (util/mm->px -10)])
+                                   (draw/v+ (xy-pos 6 1) [(util/mm->px -7) (util/mm->px -10)])
+                                   (draw/v+ (xy-pos 6 1) [(util/mm->px 7) (util/mm->px -10)])])
+              :style   (draw/fill-style texture/stone-slabs)
+              :z-order 6500}]
+
+            #_(apply
+              concat
+              (for [[x y] [(xy-pos 2.7 1) (xy-pos 3.3 1) (xy-pos 4.7 1) (xy-pos 5.3 1)]]
+                (push-back 10000 (stone/rings x (+ y (util/mm->px 5)) [0 9] 12 20 0.8 7))))
+
+            (push-back -7000
+              (apply
+                concat
+                (for [[x y] [(xy-pos 2 1) (xy-pos 4 1)]
+                      y-offset [-6 -14]] ; top wall
+                  (stone/h-wall x (+ y (util/mm->px y-offset)) (util/mm->px 115) 20 8 9 4))))
+
+            #_(apply
+              concat
+              (for [[x y] [(xy-pos 2 1) (xy-pos 4 1)]] ; bottom wall
+                (push-back
+                  10000
+                  (concat
+                    (stone/h-wall x (+ y (util/mm->px 6)) (util/mm->px 40) 20 12 9 7)
+                    (stone/h-wall (+ x (util/mm->px 70)) (+ y (util/mm->px 6)) (util/mm->px 40) 20 12 9 7)))))
+
+            #_(apply
+              concat
+              (for [[x y] [(xy-pos 2 -1) (xy-pos 6 -1)]
+                    x-offset [(util/mm->px -7) (util/mm->px 7)]]
+                (stone/v-wall (+ x x-offset) y (util/mm->px 100) 20 12 9 7)
+                ))
+
+            (push-back -6000
+              (apply
+                concat
+                (for [[[x1 y1] [x2 y2]] #_ [[(xy-pos 1 -1) (xy-pos 2 0)]
+                                         [(xy-pos 2 0) (xy-pos 2 1)]
+                                         [(xy-pos 7 -1) (xy-pos 7 0)]
+                                            [(xy-pos 7 0) (xy-pos 6 1)]]
+                      [[(xy-pos 1 -1) (xy-pos 2 1)]
+                       [(xy-pos 7 -1) (xy-pos 6 1)]]
+                      x-offset [(util/mm->px -7) (util/mm->px 7)]
+                      y-offset [(util/mm->px -10)]]
+                  (stone/d-wall (+ x1 x-offset) (+ y1 y-offset) (+ x2 x-offset) (+ y2 y-offset) 20 12 9 2/3 4))))
+
             #_(let [[x1 y] (xy-pos -2 -1)
                     [x2 _] (xy-pos 10 -1)]
                 (stone/h-wall x1 (+ y (util/mm->px 12)) (- x2 x1) 20 12 9 8))
-            (let [[x y] (xy-pos 1 1)]
+            #_(let [[x y] (xy-pos 1 2)]
               (stone/h-wall (- x 500) (+ y (util/mm->px 4)) 500 20 12 9 8))
-            (let [[x y] (xy-pos 7 1)]
+            #_(let [[x y] (xy-pos 8 2)]
               (stone/h-wall x (+ y (util/mm->px 4)) 500 20 12 9 8))
             (let [[x1 y] (xy-pos 2 3)
                   [x2 _] (xy-pos 6 3)]
               (stone/h-wall x1 (+ y (util/mm->px 4)) (- x2 x1) 20 12 9 8))
-            (let [[x y] (xy-pos 1 1)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 80 0.8 11))
-            (let [[x y] (xy-pos 7 1)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 80 0.8 11))
-            (let [[x y] (xy-pos 2 3)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 80 0.8 11))
-            (let [[x y] (xy-pos 6 3)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 80 0.8 11)))]
+
+            (let [[x y] (xy-pos 0 3)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 80 0.8 10))
+            (let [[x1 y1] (xy-pos 0 3) [x2 y2] (xy-pos -1 0)]
+              (stone/d-wall x1 y1 x2 y2 20 12 9 2/3 6))
+            (let [[x y] (xy-pos 8 3)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 80 0.8 10))
+            (let [[x1 y1] (xy-pos 8 3) [x2 y2] (xy-pos 10 0)]
+              (stone/d-wall x1 y1 x2 y2 20 12 9 2/3 6))
+
+            (let [[x y] (xy-pos 2 3)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 80 0.8 10))
+            (let [[x y] (xy-pos 6 3)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 80 0.8 10))
+
+            (let [[x y] (xy-pos 1 -1)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 60 0.8 13))
+            (let [[x y] (xy-pos 2 0)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 60 0.8 13))
+            (let [[x y] (xy-pos 7 0)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 60 0.8 13))
+            (let [[x y] (xy-pos 7 -1)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 60 0.8 13))
+
+            (let [[x y] (xy-pos 2 1)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 60 0.8 13))
+            (let [[x y] (xy-pos 3 1)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 60 0.8 13))
+            (let [[x y] (xy-pos 4 1)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 60 0.8 13))
+            (let [[x y] (xy-pos 5 1)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 60 0.8 13))
+            (let [[x y] (xy-pos 6 1)] (stone/rings x (+ y (util/mm->px 4)) [0 9] 30 60 0.8 13))
+
+            )]
       (stone/do-instructions g instructions))
 
-    (let [[x y] (xy-pos 1 1)] (symbol/flag g x (- y (util/mm->px 25)) 40 1.2))
-    (let [[x y] (xy-pos 7 1)] (symbol/flag g x (- y (util/mm->px 25)) 40 1.2))
-    (let [[x y] (xy-pos 2 3)] (symbol/flag g x (- y (util/mm->px 25)) 40 1.2))
-    (let [[x y] (xy-pos 6 3)] (symbol/flag g x (- y (util/mm->px 25)) 40 1.2))
+    (let [[x y] (xy-pos 0 3)] (symbol/flag g x (- y (util/mm->px 25) -9) 40 1.2))
+    (let [[x y] (xy-pos 8 3)] (symbol/flag g x (- y (util/mm->px 25) -9) 40 1.2))
+    (let [[x y] (xy-pos 2 3)] (symbol/flag g x (- y (util/mm->px 25) -9) 40 1.2))
+    (let [[x y] (xy-pos 6 3)] (symbol/flag g x (- y (util/mm->px 25) -9) 40 1.2))
 
+    (let [[x y] (xy-pos 2 1)] (symbol/flag g x (- y (util/mm->px 25) 18) 40 1.2))
+    (let [[x y] (xy-pos 4 1)] (symbol/flag g x (- y (util/mm->px 25) 18) 40 1.2))
+    (let [[x y] (xy-pos 6 1)] (symbol/flag g x (- y (util/mm->px 25) 18) 40 1.2))
 
     ;(stone/h-wall g (- x 500) y 500 20 12 9 3)
 

@@ -6,11 +6,11 @@
             [clojure.java.io :as io])
   (:import
     [java.awt Graphics2D Color Font]
-    (java.awt.geom Ellipse2D$Double AffineTransform)
-    (java.awt.font FontRenderContext)
-    (javax.imageio ImageIO)
-    (java.io File)
-    (java.awt.image RenderedImage)))
+    [java.awt.geom Ellipse2D$Double AffineTransform]
+    [java.awt.font FontRenderContext]
+    [javax.imageio ImageIO]
+    [java.io File]
+    [java.awt.image RenderedImage BufferedImage]))
 
 
 (defn indexed [c]
@@ -143,29 +143,68 @@
                  (+ cx (* (Math/sin (+ theta #_step-size)) r 1/2))
                  (+ (- cy (* r 1/32)) (* (Math/cos (+ theta #_step-size)) r 1/2)))))
 
-        (case label
-          "Gold" (arc-text g (draw/shape-style Color/BLACK 0.5 color) label cx (+ cy (util/mm->px 21)) 50 120 1/12)
-          "Silver" (arc-text g (draw/shape-style Color/BLACK 0.5 color) label cx (+ cy (util/mm->px 25)) 48 130 1/11)
-          "Bronze" (arc-text g (draw/shape-style Color/BLACK 0.5 color) label cx (+ cy (util/mm->px 40)) 46 170 1/15)
-          "Farmer" (arc-text g (draw/shape-style Color/BLACK 0.5 color) label cx cy 35 55 3/14)
-          "Scout" (arc-text g (draw/shape-style Color/BLACK 0.5 color) label cx cy 40 55 3/14)
-          "Archer" (arc-text g (draw/shape-style Color/BLACK 0.5 color) label cx cy 35 55 3/14)
-          "Chocolate Cake" (arc-text g (draw/shape-style Color/BLACK 0.5 color) label cx cy 30 55 4/10)
-          "Smithy" (arc-text g (draw/shape-style Color/BLACK 0.5 color) label cx cy 35 60 3/14)
-          "Knight" (arc-text g (draw/shape-style Color/BLACK 0.5 color) label cx cy 35 60 3/14))
+        (let [line-color (draw/rgb-lerp color Color/BLACK 0.4)
+              color (draw/rgb-lerp color Color/BLACK 0.15)]
+          (doseq [line-thickness [1]]
+            (case label
+              "Gold" (arc-text g (draw/shape-style line-color line-thickness color) label cx (+ cy (util/mm->px 21)) 50 120 1/12)
+              "Silver" (arc-text g (draw/shape-style line-color line-thickness color) label cx (+ cy (util/mm->px 25)) 48 130 1/11)
+              "Bronze" (arc-text g (draw/shape-style line-color line-thickness color) label cx (+ cy (util/mm->px 40)) 46 170 1/15)
+              "Farmer" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 35 55 3/14)
+              "Scout" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 40 55 3/14)
+              "Archer" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 35 55 3/14)
+              "Chocolate Cake" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 30 55 4/10)
+              "Smithy" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 35 60 3/14)
+              "Knight" (arc-text g (draw/shape-style line-color line-thickness color) label cx cy 35 60 3/14))))
         #_(if (and money? (= "Gold" label))
-          (arc-text g (draw/line-style 1) label cx (+ cy (util/mm->px 12)) 50 88 1/8)
+            (arc-text g (draw/line-style 1) label cx (+ cy (util/mm->px 12)) 50 88 1/8)
 
           ))
       )))
 
+(defn draw-bonus-token [^Graphics2D g n]
+  (draw/shape g (draw/fill-style (Color/BLACK))
+    (draw/rectangle 0 0 200 200))
+  (draw/text g (draw/text-style 40 Color/YELLOW :bold!) "Bonus!" 100 80)
+  (draw/shape g (draw/fill-style (Color/YELLOW))
+    (draw/rectangle 0 100 200 55))
+  (draw/text g (draw/text-style 40 Color/BLACK :bold!) "+" 75 127)
+  (case n
+    0 (symbol/move g 115 127 1)
+    1 (symbol/price-label g 1 115 127)
+    2 (symbol/attack-range g 115 127 1)
+    3 (symbol/damage g 115 127 1)
+    4 (symbol/shield g 115 123 20 1)))
+
+(defn draw-bonus-back [^Graphics2D g]
+  (draw/shape g (draw/fill-style (Color/BLACK))
+    (draw/rectangle 0 0 200 200))
+  (doseq [x (range -100 300 40)
+          y (range -100 300 40)]
+
+    (draw/with-transform g (transforms
+                             (AffineTransform/getTranslateInstance x (+ y (* x 0.5)))
+                             (AffineTransform/getRotateInstance -0.6))
+      (draw/text-shape g
+                       (draw/text-shape-style 20 (draw/rgb 128 128 0) 0.5 (draw/rgb 255 255 0 200) :bold!)
+                       "Bonus!" 0 0))
+    )
+  (draw/text-shape g
+                   (draw/text-shape-style 140 Color/YELLOW 3 (draw/rgb 128 128 0) :bold!)
+                   "?" 103 105)
+  #_(draw/text g (draw/text-style 140 Color/YELLOW :bold!) "?" 103 105))
 
 
 (defn ffilter [pred coll]
   (first (filter pred coll)))
 
-(defn farmer [g x y]
-  (draw-token (ffilter #(-> % :label (= "Farmer")) data/characters) g x y))
+(defn new-image-file [image-name f-of-g]
+  (let [file (io/file "generated" (str image-name ".png"))
+        image (draw/with-new-image [^Graphics2D g (BufferedImage. 200 200 BufferedImage/TYPE_INT_ARGB)]
+                (f-of-g g))]
+    (io/make-parents file)
+    (ImageIO/write ^RenderedImage image "png" ^File file)
+    image))
 
 
 (do ; test block
@@ -174,9 +213,9 @@
   (import '[java.awt.image BufferedImage]
           '[java.awt RenderingHints])
 
-  (def size 960)
-  (def width size)
-  (def height size)
+  ;(def size 1000)
+  (def width 1000)
+  (def height 800)
 
   (defonce ^BufferedImage image (BufferedImage. width height BufferedImage/TYPE_INT_ARGB))
   (defonce refresh-fn (see/see image :only-draw-when-updated? true))
@@ -187,24 +226,62 @@
   (.setColor g Color/WHITE)
   (.fillRect g 0 0 width height)
 
-  (doseq [[idx c] (map-indexed vector data/characters)]
-    (let [row (quot idx 3)
-          col (rem idx 3)]
-      (draw-token c g (* col 250) (* row 250))))
+  ;(doseq [[idx c] (map-indexed vector data/characters)]
+  ;  (let [row (quot idx 3)
+  ;        col (rem idx 3)]
+  ;    (draw-token c g (* col 250) (* row 250))))
+  ;
+  ;(refresh-fn)
 
-  (refresh-fn)
+  (let [token-images (for [[idx c] (map-indexed vector data/characters)]
+                       (new-image-file (str "token_" idx)
+                         (fn [g] (draw-token c g 0 0 :no-border!))))
+        shield-image  (new-image-file "shield"
+                        (fn [g]
+                          (draw/shape g draw/style-shield
+                            (draw/rectangle 0 0 200 200))
+                          (symbol/shield g 100 95 41)
+                          (symbol/shield g 100 95 40)))
+        vp-image  (new-image-file "vp"
+                    (fn [g]
+                      (draw/shape g (draw/fill-style (draw/rgb 255 50 200))
+                        (draw/rectangle 0 0 200 200))
+                      (symbol/vp g 100 90 52.5 :with-crown!)))
+        bonus-tokens (map (fn [idx]
+                            (new-image-file (str "bonus_" idx)
+                              (fn [g]
+                                (draw-bonus-token g idx)))) (range 5))
+        bonus-back (new-image-file "bonus_back" draw-bonus-back)
+        images (concat [shield-image vp-image] token-images bonus-tokens [bonus-back])]
+    ; TODO: draw vp token
+    ; TODO: draw shield token
+    ; TODO: draw 4 bonus tokens (or more? +1 shield, spend, move, attack, range, draw?)
 
-  (doseq [[idx c] (map-indexed vector data/characters)]
+    (let [xs [0 1 2 3 4]
+          ys [0 1 2 3]]
+      (doseq [x xs
+              y ys]
+        (let [image (get (vec images) (+ x (* y (count xs))))
+              xp (* x 200)
+              yp (* y 200)]
+          (.drawImage g image nil xp yp)
+          (draw/shape g
+            (draw/line-style 1 (draw/rgb 255 0 0 128))
+            (draw/ellipse (+ xp 100) (+ yp 100) 80))
+          )))
+    (refresh-fn)
+
+    (println (count images)))
+
+  #_(doseq [[idx c] (map-indexed vector data/characters)]
     (let [file (io/file "generated" (str "token_" idx ".png"))]
       (io/make-parents file)
       (ImageIO/write
         ^RenderedImage
-        (draw/with-new-image [^Graphics2D g (BufferedImage. 220 220 BufferedImage/TYPE_INT_ARGB)]
-          (.setRenderingHint g RenderingHints/KEY_ANTIALIASING RenderingHints/VALUE_ANTIALIAS_ON)
-          (.setRenderingHint g RenderingHints/KEY_RENDERING RenderingHints/VALUE_RENDER_QUALITY)
-          (.setColor g Color/YELLOW)
-          (.fillRect g 0 0 250 250)
-          (draw-token c g 10 10 :no-border!))
+        (draw/with-new-image [^Graphics2D g (BufferedImage. 200 200 BufferedImage/TYPE_INT_ARGB)]
+          ;(.setColor g Color/YELLOW)
+          ;(.fillRect g 0 0 250 250)
+          (draw-token c g 0 0 :no-border!))
         ; TODO: can probably get away with a 200 x 200 image and the
         ; tokens drawn at (0, 0).
         ; They got shrunk because the printers were worried about bleed distances and

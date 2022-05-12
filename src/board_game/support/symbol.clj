@@ -33,9 +33,9 @@
 (def text-style-price (draw/text-style (util/mm->px 8) (draw/rgb 0 0 0 200) true))
 
 (defn- price-line [^Graphics2D g x1 y1 x2 y2]
-  (draw/line g (draw/line-style (util/mm->px 5) (draw/rgb 255 255 0 128)) x1 y1 x2 y2)
-  (draw/line g (draw/line-style (util/mm->px 3) color-price-inner) x1 y1 x2 y2)
-  (draw/line g (draw/line-style (util/mm->px 1) color-price-outer) x1 y1 x2 y2))
+  (draw/line g (draw/line-style (util/mm->px 3) (draw/rgb 255 255 0 128)) x1 y1 x2 y2)
+  (draw/line g (draw/line-style (util/mm->px 2) color-price-inner) x1 y1 x2 y2)
+  (draw/line g (draw/line-style (util/mm->px 1) (draw/rgb 255 240 150)) x1 y1 x2 y2))
 
 (defn price-label
   ([^Graphics2D g cost x y] (price-label g cost x y nil nil))
@@ -466,12 +466,26 @@
 
     ))
 
+(defn arc-points [x y r arc-start arc-end]
+  (for [theta (range arc-start arc-end 0.05)]
+    [(+ x (* r (Math/sin theta)))
+     (+ y (* r (Math/cos theta)))]))
+
 (defn vp [g x y size & [with-crown?]]
   (let [x-spread 0.45
         r (* size 1/2)
         r-bit (* r (Math/sqrt 0.5))
+        x (int x)
+        y (int y)
         x1 (- x (* size x-spread))
         x2 (+ x (* size x-spread))
+
+        points-left (arc-points (- x1 0.5) (- y 0.1) r (* Math/PI 0.64) (* Math/PI 1.75))
+        points-right (arc-points (- x2 0.5) (- y 0.1) r (* Math/PI 0.25) (* Math/PI 1.36))
+        heart-shape (draw/poly (concat points-right
+                                       points-left
+                                       [[x (+ y r-bit r-bit (* size x-spread))]]))
+
         shape (draw/shape-add
                 (draw/ellipse (- x1 0.5) (- y (* 0.1)) r)
                 (draw/ellipse (- x2 0.5) (- y (* 0.1)) r)
@@ -503,7 +517,7 @@
         h3 (-> h1 (draw/translate 9 0))
         jc (draw/shape-style Color/BLACK 1 (draw/rgb 0 150 0))
         hc (draw/fill-style (draw/rgb 255 255 255 255))]
-    (draw/shape g (draw/shape-style Color/BLACK 2 Color/RED) shape)
+    (draw/shape g (draw/shape-style Color/BLACK 2 Color/RED) heart-shape)
     (draw/shape g (draw/fill-style (draw/rgb 255 255 255 128))
       (draw/ellipse (- x1 (* r-bit 1/3)) (- y (* r-bit 1/3)) (* r-bit 1/2)))
     (draw/shape g (draw/fill-style (draw/rgb 255 255 255 128))
@@ -530,6 +544,9 @@
       (draw/shape g hc (crown-transform h1))
       (draw/shape g hc (crown-transform h2))
       (draw/shape g hc (crown-transform h3))
+
+      ;(draw/shape g (draw/line-style 1 Color/GREEN) heart-shape)
+      ;(draw/shape g (draw/fill-style Color/CYAN) (draw/poly points-right))
 
       )))
 
@@ -566,7 +583,8 @@
                 0 360))
 
     (draw/line g (draw/line-style 7 Color/BLACK) x (- y height) x (+ y (* height pole-length)))
-    (draw/line g (draw/line-style 3 Color/WHITE #_(draw/rgb 100 50 0)) x (- y height) x (+ y (* height pole-length)))
+    (draw/line g (draw/line-style 3 Color/WHITE) x (- y height) x (+ y (* height pole-length)))
+    (draw/line g (draw/line-style 1.5 Color/GRAY) (inc x) (- y height) (inc x) (+ y (* height pole-length)))
 
     (draw/with-clip g flag-shape
       (doseq [lx (range 0 length)]
@@ -588,8 +606,8 @@
 
     #_(draw/shape g (draw/line-style 1) star-shape)
 
-    (cake g (+ x (* length 0.3) (util/mm->px 1)) (- y (* height 1/2)) (* (/ 13 50) size) 1.25)
-    ;(vp g (+ x (* length 0.3) (util/mm->px 1)) (- y (* height 3/5)) (* size 1/3))
+    ;(cake g (+ x (* length 0.3) (util/mm->px 1)) (- y (* height 1/2)) (* (/ 13 50) size) 1.25)
+    (vp g (+ x (* length 0.3) (util/mm->px 1)) (- y (* height 0.57)) (* size 1/3) :with-crown!)
 
     (draw/shape g (draw/line-style 2)
       flag-shape)
@@ -631,6 +649,13 @@
   (flag g 200 300 40 1/2)
   (flag g 100 300 30 1/2)
   (flag g 100 500 30 1.2)
+
+
+  (doseq [[x y size] [[50 50 50]
+                      [150 50 40]
+                      [250 50 30]
+                      [350 50 20]]]
+    (vp g x y size :with-crown!))
 
   (comment
     (price-label g 8 40 40 80 40)

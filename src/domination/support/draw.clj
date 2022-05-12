@@ -121,6 +121,17 @@
      (prepare-for-fill [_ _]
        false))))
 
+(defn text-shape-style [font-size outline outline-width fill bold?]
+  (reify protocols/Style
+    (prepare-for-draw [_ g]
+      (.setFont g (.deriveFont (if bold? font-bold font-regular) (float font-size)))
+      (.setPaint g outline)
+      (.setStroke g (BasicStroke. outline-width BasicStroke/CAP_ROUND BasicStroke/JOIN_ROUND))
+      true)
+    (prepare-for-fill [_ g]
+      (.setPaint g fill)
+      true)))
+
 (def style-shield (shape-style Color/BLACK 1 color-shield))
 (def style-player-1 (shape-style Color/BLACK 1 Color/GREEN))
 (def style-player-2 (shape-style Color/BLACK 1 Color/BLUE))
@@ -157,6 +168,12 @@
 
 (defn v* [[x y] f]
   [(* x f) (* y f)])
+
+(defn normal [[x y]]
+  [(- y) x])
+
+(defn abs [[x y]]
+  (Math/sqrt (+ (* x x) (* y y))))
 
 (defn vlerp [a b p]
   (let [q (- 1 p)]
@@ -224,18 +241,18 @@
     (.draw g shape)))
 
 (defn text-shape [^Graphics2D g style ^String string x y]
-  (when (protocols/prepare-for-draw style g)
-    (let [font (.getFont g)
-          x-offset (case string
-                     "1" (* (.getSize font) -1/16)
-                     0)
-          frc (.getFontRenderContext g)
-          text-layout (TextLayout. string font frc)
-          bounds (.getPixelBounds text-layout frc 0 0)
-          gx (- x (.getX bounds) (/ (.getWidth bounds) 2))
-          gy (- y (.getY bounds) (/ (.getHeight bounds) 2))]
-      (shape g style (.getOutline text-layout (AffineTransform/getTranslateInstance (float (+ gx x-offset)) (float gy))))
-      #_(.draw g (.getOutline text-layout (AffineTransform/getTranslateInstance (float (+ gx x-offset)) (float gy)))))))
+  (protocols/prepare-for-draw style g)
+  (let [font (.getFont g)
+        x-offset (case string
+                   "1" (* (.getSize font) -1/16)
+                   0)
+        frc (.getFontRenderContext g)
+        text-layout (TextLayout. string font frc)
+        bounds (.getPixelBounds text-layout frc 0 0)
+        gx (- x (.getX bounds) (/ (.getWidth bounds) 2))
+        gy (- y (.getY bounds) (/ (.getHeight bounds) 2))]
+    (shape g style (.getOutline text-layout (AffineTransform/getTranslateInstance (float (+ gx x-offset)) (float gy))))
+    #_(.draw g (.getOutline text-layout (AffineTransform/getTranslateInstance (float (+ gx x-offset)) (float gy))))))
 
 (defn circle [^Graphics2D g style x y r]
   (let [gx (- x r)
@@ -253,6 +270,10 @@
 (defn rotate [shape radians]
   (doto (Area. shape)
     (.transform (AffineTransform/getRotateInstance radians))))
+
+(defn scale [shape scale]
+  (doto (Area. shape)
+    (.transform (AffineTransform/getScaleInstance scale scale))))
 
 (defmacro with-clip [g clip & body]
   `(let [pre-clip# (.getClip ~g)]
@@ -286,6 +307,18 @@
               (rgb-lerp color Color/BLACK (- cf)))]
       (line g (line-style 1 c) (+ x n) y x (+ y n)))))
 
+(defn vshade [g start v width-factor color shade-fn shade-scale]
+  (doseq [p (range 0 1 (/ 1 (* 2 (abs v))))]
+    (let [v-bit (v* v p)
+          n (v* (normal v) width-factor)
+          cf (shade-fn (* p shade-scale))
+          c (if (pos? cf)
+              (rgb-lerp color Color/WHITE cf)
+              (rgb-lerp color Color/BLACK (- cf)))
+          [x1 y1] (-> start (v+ n) (v+ v-bit))
+          [x2 y2] (-> start (v- n) (v+ v-bit))]
+      (line g (line-style 2 c) x1 y1 x2 y2))))
+
 (defmacro with-new-image [[graphics-symbol image-form] & forms]
   `(let [image# ~image-form
          ~graphics-symbol (.getGraphics image#)]
@@ -297,5 +330,8 @@
 (defn rectangle [x y w h]
   (Rectangle2D$Double. x y w h))
 
-(defn ellipse [x y w h]
-  (Ellipse2D$Double. x y w h))
+(defn ellipse
+  ([x y r]
+   (ellipse (- x r) (- y r) (* 2 r) (* 2 r)))
+  ([x y w h]
+   (Ellipse2D$Double. x y w h)))

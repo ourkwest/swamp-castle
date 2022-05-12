@@ -94,18 +94,21 @@
     (symbol/flag g x2 (- y1 60) 20 1.2)
     (symbol/flag g x2 (- y2 60) 20 1.2)))
 
+(defn mm-size "convert from mm to whatever weird intenal format clj-pdf uses" [mm]
+  (Math/round (float (* 17/6 mm))))
+
 (defn render-instructions []
   (pdf/pdf
     [{:title       "Instructions"
       :author      "Rachel K. Westmacott"
       :creator     "Rachel K. Westmacott"
       :orientation :portrait
-      :size        :a4
+      :size        :a4 ;[(mm-size 88.9) (mm-size 146)]
       :subject     "Instructions for a board game"
       :stylesheet  stylesheet
-      :font {:encoding :unicode
-             :ttf-name "./resources/fonts/ah/AtkinsonHyperlegible-Regular.ttf"}
-      :footer {:align :center}}
+      :font        {:encoding :unicode
+                    :ttf-name "./resources/fonts/ah/AtkinsonHyperlegible-Regular.ttf"}
+      :footer      {:align :center}}
 
      [:heading.center.bigger "Cake Walk"]
      [:graphics {:under true
@@ -138,7 +141,7 @@
       [:phrase "A game board with a map of the terrain approaching Prince Æcclescrumb's castle"]
       [:phrase "A piece card with spaces for unbought " minions " and " shields]
       [:phrase "8 bags to be used as " draw-bags " and " discard-bags]
-      [:phrase "20 " minion " pieces (5 in each of 4 colours)"]
+      [:phrase "16 " minion " pieces (4 in each of 4 colours)"]
       [:phrase "24 " shield " pieces"]
       [:phrase "144 " tokens " in " (count characters) " different types:"
        [:list
@@ -191,7 +194,7 @@
      [:heading.center "Aim"]
      [:paragraph
       "The aim of the game is to win Prince Æcclescrumb's affection by sending the most " minions " to woo him with " cake ". "
-      "This is done by having a " minion " on the final row of the board and playing "
+      "This is done by having a " minion " on a hex marked with the cake symbol and playing "
       "a " cake " " token " from your hand."]
      [:spacer]
 
@@ -242,9 +245,10 @@
      [:heading.smaller "2. Placing " tokens]
      [:paragraph
       "You may place 1 role " token " on each of your " minions " that are on the board. "
-      "You may only place role " tokens " on your " minions " (those " tokens " marked with a brown mask symbol). "
-      "You may not place money " tokens " on your " minions ". "
-      "You may only place " cake " " tokens " on " minions " that are on the final row of the board (those marked with the cake symbol). "
+      "If you have bought " minions " that are not on the board, you may add them to a starting hex on the board as you place " tokens ". "
+      "You may only place " [:chunk.emphasis "role"] " " tokens " on your " minions " (those " tokens " marked with a brown mask symbol). "
+      "You may not place " [:chunk.emphasis "money"] " " tokens " on your " minions ". "
+      "You may only place " cake " " tokens " on " minions " that are adjacent to the entrances of the castle (those marked with the cake symbol). "
       "For each role " token " that you place you may draw another " token " in accordance with the above rules about drawing. "
       "When you place a " token " you may choose " [:chunk.emphasis "not"] " to draw another " token " if you wish, "
       "such as when you know there's something in your " draw-bag " that might be more useful on the following turn."]
@@ -292,7 +296,7 @@
       [:heading.smaller "Attacking at Range"]
       [:paragraph "If a " token " has a ranged attack, count the range as if it were movement. "
        "e.g. When an Archer attacks, imagine an arrow starting on the Archer's hex and "
-       "moving up to 3 hexes to reach it's target. Arrows may pass over other " minions ", rivers and walls."]
+       "moving up to 3 hexes to reach it's target. Arrows may pass over other " minions ", rivers and walls as if they were not there."]
 
       [:spacer]
       [:heading.smaller "Chocolate Cake"]
@@ -301,7 +305,7 @@
        " & moist Chocolate Cake. "]
       [:paragraph
        "Your " minion " must be on a 'Cake' hex to perform this action. "
-       "Your " minion " is completely retired from the game; they are removed from the board and can no longer be bought. "
+       "Your " minion " is completely retired from the game; they are placed in the castle at the end of the board and can no longer be bought. "
        "Your " cake " " token " is returned to the bank. "
        "Each time you do this counts towards your victory."]]
 
@@ -342,7 +346,7 @@
       "Bonus " tokens " are discarded to the " discard-bag " just like other " tokens "."]
 
      [:graphics {:under true :scale 0.5} draw-border]
-     [:pagebreak]
+     ;[:pagebreak]
      [:graphics {:under true :scale 0.5} draw-border]
 
      [:spacer]
