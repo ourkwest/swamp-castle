@@ -35,7 +35,7 @@
 ;
 
 (def inner-width-mm 295)
-(def inner-height-mm 185)
+(def inner-height-mm 165)
 ;
 (def width (+ (util/mm->px inner-width-mm) 100))
 (def height (+ (util/mm->px inner-height-mm) 100))
@@ -81,16 +81,20 @@
 
     ;(.setColor g (draw/rgb 120 180 40))
     ;(.fillRect g 0 0 width height)
-    (draw/shape g
-      (draw/fill-style (draw/rgb 120 180 40))
-      outer-rectangle)
-    (draw/shape g
-      (draw/fill-style texture/grass)
-      outer-rectangle)
+
+    (comment
+      (draw/shape g
+                  (draw/fill-style (draw/rgb 120 180 40))
+                  outer-rectangle)
+      (draw/shape g
+                  (draw/fill-style texture/grass)
+                  outer-rectangle))
 
     (draw/shape g
       (draw/fill-style texture/mud)
-      inner-rectangle)
+      ;inner-rectangle
+      outer-rectangle
+      )
 
     ;(.setColor g (draw/rgb (rand 255)(rand 255)(rand 255)))
     ;(.fillRect g 0 0 width height)
@@ -98,46 +102,46 @@
     #_(draw/shape g
                 (draw/fill-style texture/mud)
                 (Rectangle2D$Double. 0 0 width height))
+    (comment
+      (stone/do-instructions g
+                             (concat
+                               (stone/h-wall 50 (+ 50 10) (- width 100) 10 5 5 4)
+                               (stone/h-wall 50 (+ (- height 50) 10) (- width 100) 10 5 5 4)
+                               (stone/v-wall 50 (+ 50 10) (- height 100) 7 10 5 3)
+                               (stone/v-wall (- width 50) (+ 50 10) (- height 100) 7 10 5 3)
 
-    (stone/do-instructions g
-      (concat
-        (stone/h-wall 50 (+ 50 10) (- width 100) 10 5 5 4)
-        (stone/h-wall 50 (+ (- height 50) 10) (- width 100) 10 5 5 4)
-        (stone/v-wall 50 (+ 50 10) (- height 100) 7 10 5 3)
-        (stone/v-wall (- width 50) (+ 50 10) (- height 100) 7 10 5 3)
+                               (stone/rings 50 (+ 50 10) [0 5] 20 30 0.8 6)
+                               (stone/rings (- width 50) (+ 50 10) [0 5] 20 30 0.8 6)
+                               (stone/rings (- width 50) (+ (- height 50) 10) [0 5] 20 30 0.8 6)
+                               (stone/rings 50 (+ (- height 50) 10) [0 5] 20 30 0.8 6)))
 
-        (stone/rings 50 (+ 50 10) [0 5] 20 30 0.8 6)
-        (stone/rings (- width 50) (+ 50 10) [0 5] 20 30 0.8 6)
-        (stone/rings (- width 50) (+ (- height 50) 10) [0 5] 20 30 0.8 6)
-        (stone/rings 50 (+ (- height 50) 10) [0 5] 20 30 0.8 6)))
+      (symbol/flag g 50 30 20 0.8)
+      (symbol/flag g (- width 50) 30 20 0.8)
+      (symbol/flag g 50 (- height 50 20) 20 0.8)
+      (symbol/flag g (- width 50) (- height 50 20) 20 0.8))
 
-    (symbol/flag g 50 30 20 0.8)
-    (symbol/flag g (- width 50) 30 20 0.8)
-    (symbol/flag g 50 (- height 50 20) 20 0.8)
-    (symbol/flag g (- width 50) (- height 50 20) 20 0.8)
-
-    (let [shield-spacing (* util/shield-size 11/10)
+    (let [shield-spacing (* util/minion-size 11/10)
           minion-spacing (* util/minion-size 11/10)
           x-offset (util/mm->px -3)
           x-spread (util/mm->px 15)
-          y-offset (+ (util/mm->px 80) 50)
-          inset-left 100]
+          y-offset (+ (util/mm->px 80) 0)
+          inset-left 40]
       (doseq [[shield cost] {0 6
                              1 5
                              2 4
                              3 3
                              4 2
                              5 1}]
-        (let [x (+ x-offset (- (* width 1/2) (* (- shield 1.3) shield-spacing) x-spread))]
+        (let [x (int (+ x-offset (- (* width 1/2) (* (- shield 1.5) shield-spacing) x-spread)))]
           (symbol/price-label g cost
                               x (+ y-offset (util/mm->px -20))
                               x (+ y-offset (util/mm->px 85)))
           (doseq [player (range 0 4)]
-            (let [y (+ y-offset (* player minion-spacing))]
+            (let [y (int (+ y-offset (* player minion-spacing)))]
               (draw/circle g (draw/styles
                                draw/style-shield
-                               outline-style) x y (/ util/shield-size 2))
-              (symbol/shield g x (- y (util/mm->px 0.5)) (/ util/shield-size 4))))))
+                               outline-style) x y (/ util/minion-size 2))
+              (symbol/shield g x (- y (util/mm->px 0.5)) (int (/ util/minion-size 4)))))))
 
       (doseq [[y1 y2 x label] [[-0.5 1.5 60 "2 Players"]
                                [-0.5 2.5 30 "3 Players"]
@@ -180,7 +184,7 @@
                              2 2
                              3 4
                              4 8}]
-        (let [x (+ x-offset (+ (* width 1/2) (* minion minion-spacing) x-spread))]
+        (let [x (+ x-offset (+ (* width 1/2) (* (+ minion 0.5) minion-spacing) x-spread))]
           (symbol/price-label g cost
                               x (+ y-offset (util/mm->px -20))
                               x (+ y-offset (util/mm->px 85)))
@@ -194,7 +198,7 @@
               (symbol/empty-mask g x (+ y (util/mm->px 0.7)) (/ util/minion-size 4)))))
         ))
 
-    (let [y-offset 50
+    (let [y-offset 0
           x-offset 50
           width (- width x-offset x-offset)]
       (doseq [[character-idx character] (->> data/characters

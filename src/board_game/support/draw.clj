@@ -142,10 +142,10 @@
       true)))
 
 (def style-shield (shape-style Color/BLACK 1 color-shield))
-(def style-player-1 (shape-style Color/BLACK 1 Color/GREEN))
-(def style-player-2 (shape-style Color/BLACK 1 Color/BLUE))
-(def style-player-3 (shape-style Color/BLACK 1 Color/YELLOW))
-(def style-player-4 (shape-style Color/BLACK 1 Color/RED))
+(def style-player-1 (shape-style Color/BLACK 1 Color/YELLOW))
+(def style-player-2 (shape-style Color/BLACK 1 Color/RED))
+(def style-player-3 (shape-style Color/BLACK 1 (rgb 102	51	204)))
+(def style-player-4 (shape-style Color/BLACK 1 (rgb 50	103	215)))
 
 
 (defn shape-intersect
