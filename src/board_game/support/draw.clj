@@ -12,6 +12,9 @@
     [java.io File]))
 
 
+(defn TAUS [n]
+  (* Math/PI 2 n))
+
 (defn rgb
   ([color-bits]
    (apply rgb color-bits))
@@ -46,6 +49,11 @@
          (+ (* ip b1) (* p b2))
          (+ (* ip a1) (* p a2)))))
 
+(defn grayify [^Color color]
+  (let [light (int (/ (+ (.getRed color) (.getGreen color) (.getBlue color)) 3))
+        alpha (.getAlpha color)]
+    ;(println color light alpha)
+    (Color. light light light alpha)))
 
 (def color-shield (rgb 50 200 255))
 (def color-player-1 Color/GREEN)
@@ -87,6 +95,17 @@
       (some identity (mapv #(protocols/prepare-for-draw % g) (cons default-style styles))))
     (prepare-for-fill [_ g]
       (some identity (mapv #(protocols/prepare-for-fill % g) (cons default-style styles))))))
+
+(defn grayscale [style]
+  (reify protocols/Style
+    (prepare-for-draw [_ g]
+      (let [r (protocols/prepare-for-draw style g)]
+        (.setColor g (grayify (.getColor g)))
+        r))
+    (prepare-for-fill [_ g]
+      (let [r (protocols/prepare-for-fill style g)]
+        (.setColor g (grayify (.getColor g)))
+        r))))
 
 (defn line-style
   ([] (line-style 1))
@@ -144,8 +163,8 @@
 (def style-shield (shape-style Color/BLACK 1 color-shield))
 (def style-player-1 (shape-style Color/BLACK 1 Color/YELLOW))
 (def style-player-2 (shape-style Color/BLACK 1 Color/RED))
-(def style-player-3 (shape-style Color/BLACK 1 (rgb 102	51	204)))
-(def style-player-4 (shape-style Color/BLACK 1 (rgb 50	103	215)))
+(def style-player-3 (shape-style Color/BLACK 1 (rgb 152	 51	204) #_(rgb 102	51	204)))
+(def style-player-4 (shape-style Color/BLACK 1 (rgb  50	103	215)))
 
 
 (defn shape-intersect
@@ -188,6 +207,10 @@
   (let [q (- 1 p)]
     (v+ (v* a q) (v* b p))))
 
+(defn lerp [a b p]
+  (let [q (- 1 p)]
+    (+ (* a q) (* b p))))
+
 (defn bezier [a b c d n]
   (for [p (range 0 1.00001 (/ 1 n))]
     (let [e (vlerp a b p)
@@ -197,6 +220,25 @@
           i (vlerp f g p)
           j (vlerp h i p)]
       j)))
+
+(defn p->sin [p]
+  (/ (- 1 (Math/cos (TAUS p))) 2))
+
+(defn for-points [points f]
+  (for [[idx [a b]] (map-indexed vector (partition 2 1 points))
+        :let [p (/ idx (count points))]]
+    (f a b p)))
+
+(defn do-points [points f]
+  (doseq [[idx [a b]] (map-indexed vector (partition 2 1 points))
+          :let [p (/ idx (count points))]]
+    (f a b p)))
+
+(defn lines [g points width-a width-b]
+  (do-points points
+    (fn [[ax ay] [bx by] p]
+      (.setStroke g (BasicStroke. (lerp width-a width-b p)))
+      (.drawLine g ax ay bx by))))
 
 (defn poly
   ([x y r n angle] (poly x y r n angle 1))
@@ -388,3 +430,13 @@
      (io/make-parents file)
      (ImageIO/write ^RenderedImage image "png" ^File file)
      image)))
+
+(defn do-instructions [g instructions]
+  (doseq [{this-shape :shape
+           this-style :style
+           this-f     :f
+           :as i} (remove nil? (sort-by :z-order instructions))]
+    ;(println i)
+    (if this-f
+      (this-f g)
+      (shape g this-style this-shape))))

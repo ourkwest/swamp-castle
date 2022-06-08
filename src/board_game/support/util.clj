@@ -32,7 +32,8 @@
 (def dir-for-instructions (io/file "generated" "for-instructions"))
 
 (def copyright-text "Copyright © 2017-2022 Rachel K. Westmacott")
-(def tagline "A bag-building race game of strategic warfare and cake-based seduction for 2-4 players.")
+(def tagline "A bag-building race game of tactical warfare and cake-based seduction for 2-4 players.")
+(def contact "Feedback: rkwestmacott@gmail.com")
 
 (defn set-random-seed [seed]
   (let [field (.getDeclaredField Math$RandomNumberGeneratorHolder "randomNumberGenerator")]

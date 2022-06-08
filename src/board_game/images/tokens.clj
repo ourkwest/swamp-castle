@@ -177,6 +177,20 @@
           )))
     ))
 
+(defn goddess-rays [g [cx cy] step-size r]
+  (loop [a 0
+         b (rand step-size)]
+    (let [x1 (* r (Math/sin a))
+          y1 (* r (Math/cos a))
+          x2 (* r (Math/sin b))
+          y2 (* r (Math/cos b))]
+      (draw/shape g (draw/fill-style (draw/rgb 255 255 255 (rand 100)))
+        (draw/poly
+          (map (partial draw/v+ [cx cy])
+               [[x1 y1] [x2 y2] [(- x2) (- y2)] [(- x1) (- y1)]]))))
+    (when (< b util/TAU)
+      (recur b (+ b (rand step-size))))))
+
 (defn draw-bonus-token [^Graphics2D g n]
   (let [color (case n
                 0 (draw/rgb 255 150 150)
@@ -187,8 +201,6 @@
         current-clip (.getClip g)]
     (draw/shape g (draw/fill-style Color/BLACK)
                 (draw/rectangle 0 0 200 200))
-    ; TODO: would this look better using a filled shape with a texture rather than a clip? the boundary is a bit ugly
-
 
     (draw/shape g (draw/shape-style nil 0 (texture/new-texture [g2 [200 200]]
                                             (draw/shade g2 0 0 200 color draw/shade-highlight)
@@ -214,6 +226,7 @@
     3 (symbol/damage g 115 127 1)
     4 (symbol/shield g 115 123 20 1)))
 
+
 (defn draw-bonus-back [^Graphics2D g]
   (draw/shape g (draw/fill-style (Color/BLACK))
     (draw/rectangle 0 0 200 200))
@@ -231,7 +244,6 @@
                    (draw/text-shape-style 140 Color/YELLOW 3 (draw/rgb 128 128 0) :bold!)
                    "?" 103 105)
   #_(draw/text g (draw/text-style 140 Color/YELLOW :bold!) "?" 103 105))
-
 
 (defn ffilter [pred coll]
   (first (filter pred coll)))
@@ -276,6 +288,7 @@
                         (fn [g]
                           (draw/shape g draw/style-shield
                             (draw/rectangle 0 0 200 200))
+                          (goddess-rays g [100 100] 0.3 100)
                           (symbol/shield g 100 95 41)
                           (symbol/shield g 100 95 40)))
         vp-image  (draw/new-image-file to-print "vp"

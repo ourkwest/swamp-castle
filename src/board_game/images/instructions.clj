@@ -149,11 +149,13 @@
      [:paragraph.center [:chunk {:size 8} (subs util/tagline 49)]]
      ;[:spacer 1]
      [:paragraph.center [:chunk {:size 6} util/copyright-text]]
-     [:paragraph.center [:chunk {:size 6} "Font: Atkinson Hyperlegible"]]
+     [:paragraph.center [:chunk {:size 6} (str util/contact " Font: Atkinson Hyperlegible")]]
      small-spacer
      ;small-spacer
      ;small-spacer
      ;small-spacer
+     medium-spacer
+     medium-spacer
      medium-spacer
 
      (section-heading "Setting")
@@ -168,6 +170,7 @@
       "Grab some " cake " and use it to woo the Prince in the Castle! "]
 
      medium-spacer
+     medium-spacer
      (section-heading "Contents")
      small-spacer
      [:list {:leading 10}
@@ -181,7 +184,7 @@
        [:list
         (let [moneys (->> characters (filter :money?) (map :label))]
           [:phrase (count moneys) " money tokens: " (string/join ", " moneys)])
-        (let [roles (->> characters (remove :money?) (map :label))]
+        (let [roles (->> characters (remove :money?) (map :label) (map #(string/replace % "Chocolate" "")))]
           [:phrase (count roles) " role tokens: " (string/join ", " roles)])]]
       [:phrase "5 optional " bonus-tokens]]
 
@@ -239,6 +242,10 @@
      small-spacer
      (section-heading "Setting up")
      small-spacer
+
+     [:paragraph {:leading 10}
+      "The player who has brought the most baked goods to the table is player 1. Player 2 is to their left, etc."]
+
      [:paragraph {:leading 10}
       "Choose how many slices of " cake " will be required to win the Prince's heart. If in doubt, play first to 2. "]
      [:paragraph {:leading 10}
@@ -262,12 +269,13 @@
      ;[:spacer]
      ;[:heading.center.section "Playing"]
      [:paragraph {:leading 10}
-      "The game is played in turns and the player who has brought the most baked goods to the table takes the first turn. "]
+      "The game is played in turns clockwise around the table."]
      [:spacer]
 
-     [:heading.smaller "Turn Overview"]
-     [:paragraph {:leading 10} "Each turn is played as follows:"]
-     [:list {:leading 10}
+     ;[:heading.smaller "Turn Overview"]
+     [:paragraph {:leading 10} "Each turn consists of the following " [:chunk.emphasis "ordered"] " steps:"]
+     [:list {:leading  10
+             :numbered true}
       [:phrase [:chunk.emphasis "Draw"] " 4 " tokens " from your " draw-bag " into your hand. "]
       [:phrase [:chunk.emphasis "Place"] " up to 1 " token " on each " minion " of yours on the board."]
       [:phrase [:chunk.emphasis "Perform the actions"] " for the " tokens " that you have placed on your " minions ". "]
@@ -377,7 +385,8 @@
       "Bought " minions " are placed in front of you. "
       "You may place them at any time during this or any of your later turns onto any unoccupied starting hex marked with "
       "an empty mask symbol. "
-      "Bought " shields " are placed in a pile by the player where all other players can see them. "]
+      "Bought " shields " are placed in a pile by the player where all other players can see them. "
+      "Each player " [:chunk.emphasis "may only hold up to 6 shields"] ", regardless of how they are acquired."]
 
      [:pagebreak]
      [:heading.smaller "5. Discarding"]
@@ -448,15 +457,15 @@
      [:pagebreak]
 
      (token-table [[(image-cell "./generated/for-instructions/bonus_0.png")
-                    (text-cell "Movement Bonus" "One minion may move 1 extra hex this turn.")]
+                    (text-cell "Movement Bonus" "One minion may move 1 extra hex while it is moving this turn.")]
                    [(image-cell "./generated/for-instructions/bonus_1.png")
-                    (text-cell "Spend Bonus" "You have 1 extra spend at the end of your turn.")]
+                    (text-cell "Spend Bonus" "You have 1 extra spend when buying at the end of your turn.")]
                    [(image-cell "./generated/for-instructions/bonus_2.png")
-                    (text-cell "Range Bonus" "One minion may attack with 1 extra range this turn.")]
+                    (text-cell "Range Bonus" "One minion may attack with 1 extra range while it is attacking this turn.")]
                    [(image-cell "./generated/for-instructions/bonus_3.png")
-                    (text-cell "Damage Bonus" "One minion may attack with 1 extra damage this turn.")]
+                    (text-cell "Damage Bonus" "One minion may attack with 1 extra damage while it is attacking this turn.")]
                    [(image-cell "./generated/for-instructions/bonus_4.png")
-                    (text-cell "Shield Bonus" "You may take 1 free shield from the piece card this turn.")]])
+                    (text-cell "Shield Bonus" "You may take 1 free shield from the piece card when buying at the end of your turn.")]])
 
      #_(into [:table {:border      false
                     :cell-border false
@@ -648,8 +657,8 @@
       (.drawImage g i5 (+ 2100 border) (+ 0 border) nil)
       (ImageIO/write back "png" (io/file "generated" "instructions-back.png")))))
 
-;(render-instructions)
-(build-instruction-image)
+(render-instructions)
+;(build-instruction-image)
 
 (comment
   ([[:image {:scale 25} ./generated/for-instructions/token_0.png]

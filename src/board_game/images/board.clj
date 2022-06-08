@@ -19,6 +19,8 @@
 
 (def TAU (* 2 Math/PI))
 
+(def appcat (partial apply concat))
+
 (def millis-per-inch 25.4)
 ;(def a4-width 210)
 ;(def a4-height 297)
@@ -90,7 +92,7 @@
 (def board-color (Color. 60 90 20))
 ;(def earth-color (Color. 150 120 50))
 (def earth-color (Color. 100 75 15))
-(def ground-color (Color. 120 180 40))
+(def ground-color (Color. 100 160 30))
 (def outline-color (Color. 200 200 200))
 ;(def wall-color (Color. 100 100 100)) 215 190 140
 (def wall-color (Color. 215 190 140))
@@ -143,6 +145,8 @@
         y (- y1 y2)]
     (Math/sqrt (+ (* x x) (* y y)))))
 
+(def arrow-color (Color. 100 255 170 30))
+
 (defn render-arrow-2
   ([^Graphics2D g x1 y1 x2 y2] (render-arrow-2 g x1 y1 x2 y2 0.56))
   ([^Graphics2D g x1 y1 x2 y2 shortening]
@@ -175,7 +179,7 @@
                      (-> [x2 y2] (stone/v- along) (stone/v- (stone/v* across 0.57)))])
          ;(draw/shape g (draw/fill-style Color/RED) head)
          ;(draw/shape g (draw/fill-style Color/RED) shaft)
-         (draw/shape g (draw/fill-style (Color. 50 255 120 30)) arrow))))))
+         (draw/shape g (draw/fill-style arrow-color) arrow))))))
 
 (defn render-arrow
   ([^Graphics2D g x y] (render-arrow g x y 0))
@@ -195,7 +199,7 @@
                                (-> [x y] (stone/v- v) (stone/v- (stone/v* v length)) (stone/v- (stone/v* n 2/6)))
                                (-> [x y] (stone/v- v) (stone/v- (stone/v* v length)) (stone/v+ (stone/v* n 2/6)))])
              arrow (draw/shape-add head shaft)]
-         (draw/shape g (draw/fill-style (Color. 50 255 120 30)) arrow)))))
+         (draw/shape g (draw/fill-style arrow-color) arrow)))))
   #_(.setColor g (Color. 50 255 120 30))
   #_(let [y-offset (- (/ hex-radius 1.1))]
       (doseq [i (range 0 (/ hex-radius 3) (/ hex-radius 100))]
@@ -620,7 +624,7 @@
 (defmethod render :trmd [^Graphics2D g _terrain x y]
   (set-next-tree-seed)
   (let [branches (create-branches 1.0 identity)]
-    (render-shield-glow g x y)
+    ;(render-shield-glow g x y)
     (render g :spot x y)
     (render-branches g x (+ y (* hex-radius 0.4)) branches)
     ;(render-token g x y board-color ground-color)
@@ -630,8 +634,11 @@
 
 (defmethod render :tree [^Graphics2D g _terrain x y]
   (set-next-tree-seed)
+  ;(println [(x-unpos x y) (y-unpos y)])
+  (when (= [5 11] [(x-unpos x y) (y-unpos y)])
+    (util/set-random-seed 49))
   (let [branches (create-branches 1.0 identity)]
-    (render-shield-glow g x y)
+    ;(render-shield-glow g x y)
     (render g :spot x y)
     (when-not *quick?*
       (render-branches g x (+ y (* hex-radius 0.4)) branches)
@@ -681,7 +688,7 @@
   (symbol/cake g x y (* hex-radius 1/3) 3))
 
 (defmethod render :strt [^Graphics2D g _terrain x y]
-  (render-shield-glow g x y)
+  ;(render-shield-glow g x y)
   (render g :spot x y)
   ;(.setColor g board-color)
   #_(render-arrow g
@@ -837,12 +844,248 @@
   (+ (* prop b) (* (- 1 prop) a)))
 
 (defn draw-line [g xa ya xb yb colour width]
-  (.setColor g colour)
+  (.setPaint g colour)
   (.setStroke g (BasicStroke. width BasicStroke/CAP_ROUND BasicStroke/JOIN_ROUND))
   (.drawLine g xa ya xb yb))
 
+(defn make-reeds [[xc yc] size density]
+  (apply
+    concat
+    (for [_ (range density)
+          :let [light (+ 25 (rand-int 230))
+                blue (int (* 0.5 light))
+                green (int light)
+                red (int (* 0.4 green))
+                angle (rand TAU)
+                r (rand size)
+                x (+ xc (* r (Math/sin angle)))
+                y (+ yc (* r (Math/cos angle)))
+                flower? (zero? (rand-int 5))
+                flower-height 8
+                height (+ 10 (rand 10) (if flower? 5 0))
+                ]]
+      [{:z-order (- y 600)
+        :f       (fn [g] ; underwater part
+                   (doseq [n [1 2 3 4 5 6 7]]
+                     (.setColor g (Color. 20 100 0 50))
+                     (.setStroke g (BasicStroke. 3))
+                     (.drawLine g x y x (+ y n))))}
+       {:z-order (- y 500)
+        :f       (fn [g] ; shadow on water surface
+                   (.setColor g (draw/rgb 0 0 0 30))
+                   (doseq [n (range 0 1 1/5)]
+                     (.fillArc g
+                               (- x (* 6 n))
+                               (- y (* 2 n))
+                               (* 12 n)
+                               (* 6 n)
+                               0 360)))}
+       {:z-order y
+        :f       (fn [g]
+                   (when flower?
+                     (.setColor g Color/BLACK)
+                     (.setStroke g (BasicStroke. 3))
+                     (.drawLine g x y x (- y height))
+
+                     (.setColor g Color/BLACK)
+                     (.setStroke g (BasicStroke. 6 BasicStroke/CAP_ROUND BasicStroke/JOIN_BEVEL))
+                     (.drawLine g x (- y height) x (- y height flower-height))
+
+                     ; Stalk?
+                     (.setColor g (Color. 180 200 130))
+                     (.setStroke g (BasicStroke. 1))
+                     (.drawLine g x y x (- y height))
+
+                     ; flower shadow
+                     (.setColor g (Color. 100 50 50) #_(Color. 100 50 50))
+                     (.setStroke g (BasicStroke. 2 BasicStroke/CAP_ROUND BasicStroke/JOIN_BEVEL))
+                     (.drawLine g (+ x 1) (- y height -1) (+ x 1) (- y height (dec flower-height)))
+
+                     ; flower
+                     (.setColor g (Color. 125 75 75) #_(Color. 150 100 100))
+                     (.setStroke g (BasicStroke. 4 BasicStroke/CAP_ROUND BasicStroke/JOIN_BEVEL))
+                     (.drawLine g x (- y height) x (- y height flower-height))
+
+                     ; flower hightlight
+                     (.setColor g (Color. 175 125 125))
+                     (.setStroke g (BasicStroke. 2 BasicStroke/CAP_ROUND BasicStroke/JOIN_BEVEL))
+                     (.drawLine g (- x 1) (- y height 1) (- x 1) (- y height flower-height)))
+
+                   (dotimes [_ (inc (rand-int 3))]
+                     (let [yd (- (rand height))
+                           xd (rand-0 height)
+                           points (draw/bezier [x y]
+                                               [x (+ y (* yd 1/2))]
+                                               [(+ x (* xd 1/2)) (+ y yd)]
+                                               [(+ x xd) (+ y yd)] 5)]
+                       ;  (println x y xd yd)
+
+                       (.setColor g Color/BLACK)
+                       (draw/lines g points 3 1.5)
+
+                       (.setColor g (Color. 50 175 0))
+                       (draw/lines g points 2 0.5)
+
+                       (.setColor g (Color. 40 150 0))
+                       (draw/lines g (map #(draw/v+ % [1 1]) points) 1 1)
+                       ))
+
+                   )}])))
+
+(defn reed-flow [a _b p]
+  (make-reeds a
+              (+ 20 (* (draw/p->sin p) 5))
+              (* (draw/p->sin p) 10)))
+
+(defn make-rocks [a radius density]
+  (appcat
+    (for [_ (range density)]
+      (let [[cx cy] (draw/v+ a [(rand-0 radius) (rand-0 radius)])
+            size (+ 3 (rand-int 5))
+            rock-shape (draw/poly 0 0 size (+ 5 (rand-int 4)) (rand))
+            rock-color (-> (draw/rgb 215 190 140)
+                           (draw/rgb-lerp (draw/rgb 190 140 215) (rand 0.25))
+                           (draw/rgb-lerp (draw/rgb 0 0 0) (+ 0.3 (rand 0.25))))
+            under (if (zero? (rand-int 2)) -10000 0)]
+        [{:z-order (+ cy (* 10 size) under)
+          :shape   (-> rock-shape (draw/center cx cy))
+          :style   (draw/fill-style rock-color)}
+         {:z-order (+ cy 1 (* 10 size) under)
+          :shape   (-> rock-shape (draw/scale 0.75) (draw/center (dec cx) (dec cy)))
+          :style   (draw/fill-style (draw/rgb-lerp rock-color Color/WHITE 0.2))}
+         {:z-order (+ cy 2 (* 10 size) under)
+          :shape   (-> rock-shape (draw/center cx cy))
+          :style   (draw/line-style 1 Color/BLACK)}]))))
+
+(defn rock-flow []
+  (fn [a b p]
+    (apply
+      concat
+      (for [_ (range (* (draw/p->sin p) 5))]
+        (let [[cx cy] (draw/v+ a [(rand-0 30) (rand-0 30)])
+              size (+ 3 (rand-int 5))
+              rock-shape (draw/poly 0 0 size (+ 5 (rand-int 4)) (rand))
+              rock-color (-> (draw/rgb 215 190 140)
+                             (draw/rgb-lerp (draw/rgb 190 140 215) (rand 0.25))
+                             (draw/rgb-lerp (draw/rgb 0 0 0) (+ 0.3 (rand 0.25))))
+              under (if (zero? (rand-int 2)) -10000 0)]
+          [{:z-order (+ cy (* 10 size) under)
+            :shape   (-> rock-shape (draw/center cx cy))
+            :style   (draw/fill-style rock-color)}
+           {:z-order (+ cy 1 (* 10 size) under)
+            :shape   (-> rock-shape (draw/scale 0.75) (draw/center (dec cx) (dec cy)))
+            :style   (draw/fill-style (draw/rgb-lerp rock-color Color/WHITE 0.2))}
+           {:z-order (+ cy 2 (* 10 size) under)
+            :shape   (-> rock-shape (draw/center cx cy))
+            :style   (draw/line-style 1 Color/BLACK)}])))))
+
+(defn make-mud [a radius density]
+  (appcat
+    (for [_ (range density)]
+      (let [[cx cy] (draw/v+ a [(rand-0 radius) (rand-0 radius)])
+            size (+ 3 (rand-int 5))
+            mud-shape (draw/poly 0 0 size (+ 5 (rand-int 4)) (rand))
+            mud-color (-> (Color. 50 40 10 50)
+                          (draw/rgb-lerp (draw/rgb 0 0 0) (rand 0.5)))]
+        [{:z-order -110000
+          :shape   (-> mud-shape (draw/center cx cy))
+          :style   (draw/fill-style texture/mud)}
+         {:z-order -100000
+          :shape   (-> mud-shape (draw/center cx cy))
+          :style   (draw/fill-style mud-color)}]))))
+
+(defn mud-flow [a b p]
+  (apply
+    concat
+    (for [_ (range (* (draw/p->sin p) 5))]
+      (let [[cx cy] (draw/v+ a [(rand 30) (rand 30)])
+            size (+ 3 (rand-int 5))
+            mud-shape (draw/poly 0 0 size (+ 5 (rand-int 4)) (rand))
+            mud-color (-> (Color. 50 40 10 50)
+                           (draw/rgb-lerp (draw/rgb 0 0 0) (rand 0.5)))]
+        [{:z-order -110000
+          :shape   (-> mud-shape (draw/center cx cy))
+          :style   (draw/fill-style texture/mud)}
+         {:z-order -100000
+          :shape   (-> mud-shape (draw/center cx cy))
+          :style   (draw/fill-style mud-color)}]))))
+
+(defn smooth-random-seq [variance]
+  (let [!amount (volatile! (/ variance 2))]
+    (map #(vswap! !amount draw/lerp % 0.4) (repeatedly #(rand variance)))))
+
+(defn smooth-swinging-seq [n]
+  (let [!state (volatile! {:x (/ n 2)
+                           :dx 0
+                           :ddx 0})
+        step (fn [{:keys [x dx ddx]}]
+               (println x dx ddx)
+               (if (<= 0 x n)
+                 {:x   (+ x dx)
+                  :dx  (+ dx ddx)
+                  :ddx (+ (rand-0 (/ n 10))
+                          (* (- (/ n 2) x) 1/10))}
+                 {:x   (+ x dx)
+                  :dx  (+ dx ddx)
+                  :ddx (* (- (/ n 2) x) 1/4)}))]
+    (repeatedly (fn []
+                  (:x (vswap! !state step))))))
+
+(defn pulse [amplitude duration]
+  (map #(* (draw/p->sin %) amplitude) (range 0 1 (/ 1 duration))))
+
+(def reedses-top
+  (map max
+       (repeat 10000 0)
+       (concat (repeat 133 0) (pulse 5 20) (repeat 100 0))
+       (concat (repeat 145 0) (pulse 5 20) (repeat 100 0))
+       (concat (repeat 155 0) (pulse 5 20) (repeat 100 0))
+       (concat (repeat 80 0) (pulse 10 20) (repeat 10000 0))))
+
+(def reedses-middle
+  (map max
+       (repeat 10000 0)
+       (concat (repeat 145 0) (pulse 5 30) (repeat 100 0))))
+
+(def reedses-bottom
+  (map max
+       (repeat 10000 0)
+       (concat (repeat 110 0) (pulse 5 10) (repeat 100 0))
+       (concat (repeat 140 0) (pulse 5 40) (repeat 100 0))))
+
+(def rockses-top
+  (concat
+    (drop 5 (pulse 10 20))
+    (repeat 25 0)
+    (pulse 8 20)
+    ;(repeat 10 10)
+    (repeat 10000 0)))
+
+(def rockses-middle
+  (concat
+    (repeat 50 0)
+    (pulse 5 15)
+    ;(repeat 10 10)
+    (repeat 10000 0)))
+
+(def rockses-bottom
+  (concat
+    (repeat 30 0)
+    (pulse 5 15)
+    (repeat 10 0)
+    (pulse 10 15)
+    (repeat 10000 0)))
+
+(def mud-top
+  (smooth-random-seq 20)
+  #_(smooth-swinging-seq 20))
+
+(def mud-bottom
+  (smooth-random-seq 20))
+
 (defn draw-river [g]
-  (let [points (->> (for [[[x1 y1] [x2 y2] [x3 y3]] (partition 3 1 river-xys)]
+  (let [variance 0.2
+        points (->> (for [[[x1 y1] [x2 y2] [x3 y3]] (partition 3 1 river-xys)]
                       (let [[xp1 yp1] (xy-pos x1 y1)
                             [xp2 yp2] (xy-pos x2 y2)
                             [xp3 yp3] (xy-pos x3 y3)
@@ -860,43 +1103,163 @@
                             [(scale xa xb prop)
                              (scale ya yb prop)]))))
                     (apply concat)
+                    (map vector
+                         (smooth-random-seq variance)
+                         reedses-top reedses-middle reedses-bottom
+                         rockses-top rockses-middle rockses-bottom
+                         mud-top mud-bottom)
+                    (map (fn [[v rt rm rb kt km kb mt mb [x y]]]
+                           [x y v rt rm rb kt km kb mt mb]))
                     (partition 2 1))
         clip (.getClip g)]
+
+    (println "Points: " (count points))
     ;(.setClip g (board-outline 1.0))
 
-    ; Brown edges
-    (doseq [[[xa ya] [xb yb]] points
+    ; Soft Brown edges
+    (doseq [[[xa ya _wa] [xb yb _wb]] points
             f (range 0.75 1.1 0.05)]
-      (draw-line g xa ya xb yb (Color. 50 40 10 30) (/ hex-radius f)))
+      (draw-line g xa ya xb yb (Color. 50 40 10 30) (/ hex-radius (+ f (rand variance)))))
 
-    ; Black line
-    (doseq [[[xa ya] [xb yb]] points]
-      (draw-line g xa ya xb yb Color/BLACK (* hex-radius 0.95)))
+    ; Brown line
+    (doseq [[[xa ya wa] [xb yb wb]] points]
+      (draw-line g xa ya xb yb texture/mud #_(Color. 50 40 10 250) (* hex-radius (+ 0.95 wa))))
 
-    (doseq [[[xa ya] [xb yb]] points]
-      (draw-line g xa ya xb yb (Color. 100 100 250 127) (/ hex-radius 1.1)))
+    ; Blue lines
+    (doseq [[[xa ya wa] [xb yb wb]] points]
+      (draw-line g xa ya xb yb
+                 #_(Color. 100 100 250 127)
+                 (Color. 50 50 150 127)
+                 (/ hex-radius (+ 1.1 wa))))
     ;(doseq [[[xa ya] [xb yb]] points]
     ;  (draw-line g xa ya xb yb (Color. 80 80 200 127) (/ hex-radius 1.1)))
     ;(doseq [[[xa ya] [xb yb]] points]
     ;  (draw-line g xa ya xb yb (Color. 60 60 150) (/ hex-radius 1.4)))
 
-    (doseq [[[xa ya] [xb yb]] points
-            _ (range 1500)
-            :let [light (+ 50 (rand-int 200))
-                  blue (int light)
-                  green (int (* 0.4 light))
+    ; todo--------------------
+
+    (let [flow-lines (for [[[xa ya wa r] [xb yb wb]] points
+                           _ (range 1500)
+                           :let [light (+ 25 (rand-int 230))
+                                 blue (int light)
+                                 green (int (* 0.4 light))
+                                 red (int (* 0.4 green))
+                                 scale (rand)
+                                 x-offset (* scale (rand-0 hex-radius))
+                                 y-offset (* scale (rand-0 hex-radius))
+                                 x-offset-a (* x-offset (+ 0.75 (* wa 0.01) #_0.2))
+                                 y-offset-a (* y-offset (+ 0.75 (* wa 0.01) #_0.2))
+                                 x-offset-b (* x-offset (+ 0.75 (* wb 0.01) #_0.2))
+                                 y-offset-b (* y-offset (+ 0.75 (* wb 0.01) #_0.2))]]
+                       {:z-order 0
+                        :f       (fn [g]
+                                   (.setColor g (Color. red green blue (int (+ 50 (* 50 (- 1 scale))))))
+                                   (.setStroke g (BasicStroke. 1))
+                                   (.drawLine g
+                                              (+ x-offset-a xa)
+                                              (+ y-offset-a ya)
+                                              (+ x-offset-b xb)
+                                              (+ y-offset-b yb)))})
+          reeds (appcat (for [[[xa ya _wa rt rm rb] [xb yb]] points]
+                          (let [v (draw/v* [(- yb ya) (- xa xb)] 1.2)]
+                            (concat
+                              (make-reeds (draw/v+ [xa ya] v) (+ 20 rt) rt)
+                              (make-reeds [xa ya] (+ 20 rm) rm)
+                              (make-reeds (draw/v- [xa ya] v) (+ 20 rb) rb)))))
+          #_#_reeds (appcat (draw/for-points (draw/bezier [1300 1940] [1450 1950] [1460 2020] [1490 2050] 20)
+                          reed-flow))
+          rocks (appcat (for [[[xa ya _wa rt rm rb kt km kb] [xb yb]] points]
+                          (let [v (draw/v* [(- yb ya) (- xa xb)] 1.2)]
+                            (concat
+                              (make-rocks (draw/v+ [xa ya] v) (+ 20 kt) kt)
+                              (make-rocks [xa ya] (+ 20 km) km)
+                              (make-rocks (draw/v- [xa ya] v) (+ 20 kb) kb)))))
+          #_#_rocks (appcat
+                  (draw/for-points (draw/bezier [1200 1990] [1350 2000] [1430 2070] [1440 2100] 20)
+                    (rock-flow)))
+          mud (appcat (for [[[xa ya _wa rt rm rb kt km kb mt mb] [xb yb]] points]
+                        (let [v [(- yb ya) (- xa xb)]]
+                          (concat
+                            (make-mud (draw/v+ [xa ya] (draw/v* v 2.5)) 20 mt)
+                            (make-mud (draw/v+ [xa ya] (draw/v* v 2.0)) 30 mt)
+                            (make-mud (draw/v- [xa ya] (draw/v* v 2.0)) 30 mb)
+                            (make-mud (draw/v- [xa ya] (draw/v* v 2.5)) 20 mb)))))
+
+          #_#_mud (appcat (draw/for-points (draw/bezier [1200 1990] [1350 2000] [1490 2120] [1490 2200] 40)
+                        mud-flow))
+          ]
+
+      (draw/do-instructions g (concat flow-lines reeds rocks mud))
+      )
+
+    ; todo: define where these are more naturally - f.e. a bezier?
+    ;(draw-reeds g [1380 1950] 20 30)
+    ;(draw-reeds g [1420 1980] 30 50) ;(draw-reeds g [1460 1990] 60 50) ;(draw-reeds g [1460 1990] 40 1000)
+    ;(draw-reeds g [1460 2020] 30 30)
+    ;(draw-reeds g [1490 2050] 15 10)
+
+    #_(draw/do-instructions
+      g
+      (apply
+        concat
+        (draw/for-points (draw/bezier [1300 1940] [1450 1950] [1460 2020] [1490 2050] 20)
+          (fn [a b p]
+            (make-reeds g a
+                        (+ 20 (* (draw/p->sin p) 5))
+                        (* (draw/p->sin p) 10))))))
+
+    #_(draw/do-instructions
+      g
+      (apply
+        concat
+        (draw/for-points (draw/bezier [1200 1990] [1400 2000] [1460 2070] [1490 2100] 20)
+          (fn [a b p]
+            (apply
+              concat
+              (for [_ (range (* (draw/p->sin p) 5))]
+                (let [[cx cy] (draw/v+ a [(rand 30) (rand 30)])
+                      size (+ 3 (rand-int 5))
+                      rock-shape (draw/poly 0 0 size (+ 5 (rand-int 4)) (rand))
+                      rock-color (-> (draw/rgb 215 190 140)
+                                     (draw/rgb-lerp (draw/rgb 190 140 215) (rand 0.25))
+                                     (draw/rgb-lerp (draw/rgb 0 0 0) (+ 0.3 (rand 0.25))))]
+                  [{:z-order (+ cy (* 10 size))
+                    :shape   (-> rock-shape (draw/center cx cy))
+                    :style   (draw/fill-style rock-color)}
+                   {:z-order (+ cy 1 (* 10 size))
+                    :shape   (-> rock-shape (draw/scale 0.75) (draw/center (dec cx) (dec cy)))
+                    :style   (draw/fill-style (draw/rgb-lerp rock-color Color/WHITE 0.2))}
+                   {:z-order (+ cy 2 (* 10 size))
+                    :shape   (-> rock-shape (draw/center cx cy))
+                    :style   (draw/line-style 1 Color/BLACK)}])))))))
+
+    #_(doseq [[[[xa ya] [xb yb]] reeds] (map vector points (cycle [0 0 0 100 1000 100 0 0 0]))
+            _ (range reeds)
+            :let [light (+ 25 (rand-int 230))
+                  blue (int (* 0.5 light))
+                  green (int light)
                   red (int (* 0.4 green))
                   scale (rand)
-                  x-offset (* scale (rand-0 (* hex-radius 0.75)))
-                  y-offset (* scale (rand-0 (* hex-radius 0.75)))]]
+                  sign (if (zero? (rand-int 2)) 1 -1)
+
+                  xc (+ xa (* (- ya yb) sign hex-radius 0.03 (+ 0.25 (rand 0.5))))
+                  yc (+ ya (* (- xb xa) sign hex-radius 0.03 (+ 0.25 (rand 0.5))))
+
+                  xd (+ xc (* (- xb xa) sign hex-radius 0.03 (+ 0.25 (rand 0.5))))
+                  yd (+ yc (* (- yb ya) sign hex-radius 0.03 (+ 0.25 (rand 0.5))))
+
+                  ;x-offset (* sign hex-radius (+ 0.5 (rand 0.25)))
+                  ;y-offset (* sign hex-radius (+ 0.5 (rand 0.25)))
+                  ]]
 
       (.setColor g (Color. red green blue (int (+ 50 (* 50 (- 1 scale))))))
       (.setStroke g (BasicStroke. 1))
       (.drawLine g
-                 (+ x-offset xa)
-                 (+ y-offset ya)
-                 (+ x-offset xb)
-                 (+ y-offset yb)))
+                 (+ xd)
+                 (+ yd)
+                 (+ xd)
+                 (+ yd (- (rand 10)))))
+
     (.setClip g clip)))
 
 (defn push-back [distance instructions]
@@ -919,15 +1282,27 @@
     ;(.draw g (board-outline 1.2))
 
     (draw/shape g
-                (draw/fill-style texture/mud)
-                (Rectangle2D$Float. 0 0 width height)
-                ;(board-outline 1.01)
-                )
+      (draw/fill-style texture/mud)
+      (Rectangle2D$Float. 0 0 width height)
+      ;(board-outline 1.01)
+      )
+
+    (draw/shape g
+      (draw/fill-style texture/grass-2)
+      (Rectangle2D$Float. 0 0 width height)
+      ;(board-outline 1.01)
+      )
 
     ;(.setStroke g thin-stroke)
     ;(.setColor g outline-color)
     ;(.setColor g Color/BLACK)
     ;(.draw g (board-outline 1.02))
+
+    (doseq [[ix iy] all-xys]
+      (let [[x y] (xy-pos ix iy)
+            terrain (get-in terrain-map [iy ix])]
+        (when (#{:strt :tree :trmd} terrain)
+          (render-shield-glow g x y))))
 
     (when-not *quick?*
       (draw-river g))
@@ -951,8 +1326,8 @@
             wall-with-arches (reduce draw/shape-subtract box arches)]
 
         (draw/shape g
-                    (draw/line-style 14 Color/BLACK)
-                    wall-with-arches)
+          (draw/line-style 14 Color/BLACK)
+          wall-with-arches)
 
         (doseq [ix (range -1 10)]
           (let [[x y] (xy-pos ix -1)
@@ -961,8 +1336,8 @@
             (render-tower-outline g x (+ y (util/mm->px 2)) sides angle 1.0 2/3)))
 
         (draw/shape g
-                    (draw/shape-style outline-color 3 wall-color)
-                    wall-with-arches)
+          (draw/shape-style outline-color 3 wall-color)
+          wall-with-arches)
 
         (doseq [ix (range -1 10)]
           (let [[x y] (xy-pos ix -1)
@@ -975,39 +1350,42 @@
     ;(let [[x y] (xy-pos 9 1)]
     ;  (render g :wall x y))
 
+
+    ;TODO: re-enable this!!!!!!!!!!!!!!!!!!!!!!!!!!!
     (doseq [[ix iy] all-xys]
       (let [[x y] (xy-pos ix iy)
             terrain (get-in terrain-map [iy ix])]
+        (when (#{:spot :brga :brgb} terrain))
         (render g terrain x y)))
 
     #_(let [x-spread (util/mm->px 30)]
-      (doseq [[x y] (map #(xy-pos % -1) (range -1 10 2))]
-        ;(println x y)
-        #_(stone/do-instructions g
-                                 (stone/rings x (- y (util/mm->px 10)) [0 9] 30 160 0.8 11))
-        (stone/do-instructions g
-                               (concat
-                                 (stone/h-wall (- x x-spread) (+ y (util/mm->px 10)) (* 2 x-spread) 20 12 9 8)
-                                 (stone/rings (+ x x-spread) (+ y (util/mm->px 10)) [0 9] 12 20 0.8 11)
-                                 (stone/rings (- x x-spread) (+ y (util/mm->px 10)) [0 9] 12 20 0.8 11)))))
+        (doseq [[x y] (map #(xy-pos % -1) (range -1 10 2))]
+          ;(println x y)
+          #_(stone/do-instructions g
+                                   (stone/rings x (- y (util/mm->px 10)) [0 9] 30 160 0.8 11))
+          (stone/do-instructions g
+                                 (concat
+                                   (stone/h-wall (- x x-spread) (+ y (util/mm->px 10)) (* 2 x-spread) 20 12 9 8)
+                                   (stone/rings (+ x x-spread) (+ y (util/mm->px 10)) [0 9] 12 20 0.8 11)
+                                   (stone/rings (- x x-spread) (+ y (util/mm->px 10)) [0 9] 12 20 0.8 11)))))
 
     (let [instructions
           (concat
 
             [
-             {:shape (draw/poly [(xy-pos 1 -1)
-                                 (draw/v+ (xy-pos 2 1) [0 (util/mm->px -5)])
-                                 (draw/v+ (xy-pos 6 1) [0 (util/mm->px -5)])
-                                 (xy-pos 7 -1)])
-              :style (draw/fill-style texture/light-stone-slabs)
-             :z-order -50000}
+             {:shape   (draw/poly [(xy-pos 1 -1)
+                                   (draw/v+ (xy-pos 2 1) [0 (util/mm->px -5)])
+                                   (draw/v+ (xy-pos 6 1) [0 (util/mm->px -5)])
+                                   (xy-pos 7 -1)])
+              :style   (draw/fill-style texture/light-stone-slabs)
+              :z-order -50000}
              {:shape   (draw/poly [(draw/v+ (xy-pos 2 1) [0 (util/mm->px -18)])
                                    (draw/v+ (xy-pos 2 1) [0 (util/mm->px -8)])
                                    (draw/v+ (xy-pos 6 1) [0 (util/mm->px -8)])
                                    (draw/v+ (xy-pos 6 1) [0 (util/mm->px -18)])])
               :style   (draw/fill-style texture/stone-slabs)
               :z-order 8500 #_1500}
-             {:shape   (draw/poly [(draw/v+ (xy-pos 1 -1) [(util/mm->px 7)  (util/mm->px -10)])
+             {:shape   (draw/poly [(draw/v+ (xy-pos 1 -1) [(util/mm->px 7) (util/mm->px -10)])
                                    (draw/v+ (xy-pos 1 -1) [(util/mm->px -7) (util/mm->px -10)])
                                    (draw/v+ (xy-pos 2 1) [(util/mm->px -7) (util/mm->px -10)])
                                    (draw/v+ (xy-pos 2 1) [(util/mm->px 7) (util/mm->px -10)])])
@@ -1021,53 +1399,53 @@
               :z-order 6500}]
 
             #_(apply
-              concat
-              (for [[x y] [(xy-pos 2.7 1) (xy-pos 3.3 1) (xy-pos 4.7 1) (xy-pos 5.3 1)]]
-                (push-back 10000 (stone/rings x (+ y (util/mm->px 5)) [0 9] 12 20 0.8 7))))
+                concat
+                (for [[x y] [(xy-pos 2.7 1) (xy-pos 3.3 1) (xy-pos 4.7 1) (xy-pos 5.3 1)]]
+                  (push-back 10000 (stone/rings x (+ y (util/mm->px 5)) [0 9] 12 20 0.8 7))))
 
             (push-back -7000
-              (apply
+                       (apply
+                         concat
+                         (for [[x y] [(xy-pos 2 1) (xy-pos 4 1)]
+                               y-offset [-6 -14]] ; top wall
+                           (stone/h-wall x (+ y (util/mm->px y-offset)) (util/mm->px 115) 20 8 9 4))))
+
+            #_(apply
                 concat
-                (for [[x y] [(xy-pos 2 1) (xy-pos 4 1)]
-                      y-offset [-6 -14]] ; top wall
-                  (stone/h-wall x (+ y (util/mm->px y-offset)) (util/mm->px 115) 20 8 9 4))))
+                (for [[x y] [(xy-pos 2 1) (xy-pos 4 1)]] ; bottom wall
+                  (push-back
+                    10000
+                    (concat
+                      (stone/h-wall x (+ y (util/mm->px 6)) (util/mm->px 40) 20 12 9 7)
+                      (stone/h-wall (+ x (util/mm->px 70)) (+ y (util/mm->px 6)) (util/mm->px 40) 20 12 9 7)))))
 
             #_(apply
-              concat
-              (for [[x y] [(xy-pos 2 1) (xy-pos 4 1)]] ; bottom wall
-                (push-back
-                  10000
-                  (concat
-                    (stone/h-wall x (+ y (util/mm->px 6)) (util/mm->px 40) 20 12 9 7)
-                    (stone/h-wall (+ x (util/mm->px 70)) (+ y (util/mm->px 6)) (util/mm->px 40) 20 12 9 7)))))
-
-            #_(apply
-              concat
-              (for [[x y] [(xy-pos 2 -1) (xy-pos 6 -1)]
-                    x-offset [(util/mm->px -7) (util/mm->px 7)]]
-                (stone/v-wall (+ x x-offset) y (util/mm->px 100) 20 12 9 7)
-                ))
+                concat
+                (for [[x y] [(xy-pos 2 -1) (xy-pos 6 -1)]
+                      x-offset [(util/mm->px -7) (util/mm->px 7)]]
+                  (stone/v-wall (+ x x-offset) y (util/mm->px 100) 20 12 9 7)
+                  ))
 
             (push-back -6000
-              (apply
-                concat
-                (for [[[x1 y1] [x2 y2]] #_ [[(xy-pos 1 -1) (xy-pos 2 0)]
-                                         [(xy-pos 2 0) (xy-pos 2 1)]
-                                         [(xy-pos 7 -1) (xy-pos 7 0)]
-                                            [(xy-pos 7 0) (xy-pos 6 1)]]
-                      [[(xy-pos 1 -1) (xy-pos 2 1)]
-                       [(xy-pos 7 -1) (xy-pos 6 1)]]
-                      x-offset [(util/mm->px -7) (util/mm->px 7)]
-                      y-offset [(util/mm->px -10)]]
-                  (stone/d-wall (+ x1 x-offset) (+ y1 y-offset) (+ x2 x-offset) (+ y2 y-offset) 20 12 9 2/3 4))))
+                       (apply
+                         concat
+                         (for [[[x1 y1] [x2 y2]] #_[[(xy-pos 1 -1) (xy-pos 2 0)]
+                                                    [(xy-pos 2 0) (xy-pos 2 1)]
+                                                    [(xy-pos 7 -1) (xy-pos 7 0)]
+                                                    [(xy-pos 7 0) (xy-pos 6 1)]]
+                               [[(xy-pos 1 -1) (xy-pos 2 1)]
+                                [(xy-pos 7 -1) (xy-pos 6 1)]]
+                               x-offset [(util/mm->px -7) (util/mm->px 7)]
+                               y-offset [(util/mm->px -10)]]
+                           (stone/d-wall (+ x1 x-offset) (+ y1 y-offset) (+ x2 x-offset) (+ y2 y-offset) 20 12 9 2/3 4))))
 
             #_(let [[x1 y] (xy-pos -2 -1)
                     [x2 _] (xy-pos 10 -1)]
                 (stone/h-wall x1 (+ y (util/mm->px 12)) (- x2 x1) 20 12 9 8))
             #_(let [[x y] (xy-pos 1 2)]
-              (stone/h-wall (- x 500) (+ y (util/mm->px 4)) 500 20 12 9 8))
+                (stone/h-wall (- x 500) (+ y (util/mm->px 4)) 500 20 12 9 8))
             #_(let [[x y] (xy-pos 8 2)]
-              (stone/h-wall x (+ y (util/mm->px 4)) 500 20 12 9 8))
+                (stone/h-wall x (+ y (util/mm->px 4)) 500 20 12 9 8))
             (let [[x1 y] (xy-pos 2 3)
                   [x2 _] (xy-pos 6 3)]
               (stone/h-wall x1 (+ y (util/mm->px 4)) (- x2 x1) 20 12 9 8))
@@ -1101,9 +1479,9 @@
     (let [[x y] (xy-pos 2 3)] (symbol/flag g x (- y (util/mm->px 25) -9) 40 1.2))
     (let [[x y] (xy-pos 6 3)] (symbol/flag g x (- y (util/mm->px 25) -9) 40 1.2))
 
-    (let [[x y] (xy-pos 2 1)] (symbol/flag g x (- y (util/mm->px 25) 18) 40 1.2))
-    (let [[x y] (xy-pos 4 1)] (symbol/flag g x (- y (util/mm->px 25) 18) 40 1.2))
-    (let [[x y] (xy-pos 6 1)] (symbol/flag g x (- y (util/mm->px 25) 18) 40 1.2))
+    (let [[x y] (xy-pos 2 1)] (symbol/flag g x (- y (util/mm->px 25) 18) 60 0.8))
+    (let [[x y] (xy-pos 4 1)] (symbol/flag g x (- y (util/mm->px 25) 18) 60 0.8))
+    (let [[x y] (xy-pos 6 1)] (symbol/flag g x (- y (util/mm->px 25) 18) 60 0.8))
 
     ;(stone/h-wall g (- x 500) y 500 20 12 9 3)
 

@@ -34,7 +34,7 @@
 ;(def a4-height-mm 210)
 ;
 
-(def inner-width-mm 295)
+(def inner-width-mm (+ 295 40))
 (def inner-height-mm 165)
 ;
 (def width (+ (util/mm->px inner-width-mm) 100))
@@ -125,6 +125,9 @@
           x-offset (util/mm->px -3)
           x-spread (util/mm->px 15)
           y-offset (+ (util/mm->px 80) 0)
+          shield-x-offset -10
+          player-x-offset 30
+          minion-x-offset 30
           inset-left 40]
       (doseq [[shield cost] {0 6
                              1 5
@@ -132,14 +135,15 @@
                              3 3
                              4 2
                              5 1}]
-        (let [x (int (+ x-offset (- (* width 1/2) (* (- shield 1.5) shield-spacing) x-spread)))]
+        (let [x (int (+ x-offset shield-x-offset (- (* width 1/2) (* (- shield 1.5) shield-spacing) x-spread)))]
           (symbol/price-label g cost
                               x (+ y-offset (util/mm->px -20))
                               x (+ y-offset (util/mm->px 85)))
           (doseq [player (range 0 4)]
             (let [y (int (+ y-offset (* player minion-spacing)))]
               (draw/circle g (draw/styles
-                               draw/style-shield
+                               ;draw/style-shield
+                               (draw/shape-style Color/BLACK 1 (Color. 200 200 200 100))
                                outline-style) x y (/ util/minion-size 2))
               (symbol/shield g x (- y (util/mm->px 0.5)) (int (/ util/minion-size 4)))))))
 
@@ -147,14 +151,14 @@
                                [-0.5 2.5 30 "3 Players"]
                                [-0.5 3.5 0 "4 Players"]]]
         (draw/line g (draw/line-style 1 symbol/color-price-inner)
-                   (+ inset-left x 25) (+ y-offset (* y1 minion-spacing))
-                   (+ inset-left x) (+ y-offset (* y1 minion-spacing)))
+                   (+ player-x-offset inset-left x 25) (+ y-offset (* y1 minion-spacing))
+                   (+ player-x-offset inset-left x) (+ y-offset (* y1 minion-spacing)))
         (draw/line g (draw/line-style 1 symbol/color-price-inner)
-                   (+ inset-left 60 25) (+ y-offset (* y2 minion-spacing))
-                   (+ inset-left 0 x) (+ y-offset (* y2 minion-spacing)))
+                   (+ player-x-offset inset-left 60 25) (+ y-offset (* y2 minion-spacing))
+                   (+ player-x-offset inset-left 0 x) (+ y-offset (* y2 minion-spacing)))
         (draw/line g (draw/line-style 1 symbol/color-price-inner)
-                   (+ inset-left 0 x) (+ y-offset (* y1 minion-spacing))
-                   (+ inset-left 0 x) (+ y-offset (* y2 minion-spacing)))
+                   (+ player-x-offset inset-left 0 x) (+ y-offset (* y1 minion-spacing))
+                   (+ player-x-offset inset-left 0 x) (+ y-offset (* y2 minion-spacing)))
 
         #_(draw/shape g (draw/fill-style Color/WHITE)
                     (draw/shape-add (draw/rectangle (+ (* width 1/2) -10 x) (+ y-offset (* (+ (* y1 3/4) (* y2 1/4)) minion-spacing))
@@ -162,11 +166,11 @@
 
         (let [text-shape (-> (draw/text->shape g (draw/text-style 20 Color/BLACK) label)
                              (draw/rotate (* Math/PI -1/2))
-                             (draw/translate (+ inset-left 0 x) (+ y-offset (* (/ (+ y1 y2) 2) minion-spacing))))
+                             (draw/translate (+ player-x-offset inset-left 0 x) (+ y-offset (* (/ (+ y1 y2) 2) minion-spacing))))
               bounds (.getBounds text-shape)
               box (-> bounds
                       (draw/scale 1.35)
-                      (draw/center (+ inset-left 0 x) (+ y-offset (* (/ (+ y1 y2) 2) minion-spacing))) (.getBounds))
+                      (draw/center (+ player-x-offset inset-left 0 x) (+ y-offset (* (/ (+ y1 y2) 2) minion-spacing))) (.getBounds))
               top (draw/ellipse (.getX box) (- (.getY box) (* (.getWidth box) 1/2)) (.getWidth box) (.getWidth box))
               bottom (draw/ellipse (.getX box) (+ (.getY box) (.getHeight box) (* (.getWidth box) -1/2)) (.getWidth box) (.getWidth box))
               lozenge (draw/shape-add top box bottom)]
@@ -184,7 +188,7 @@
                              2 2
                              3 4
                              4 8}]
-        (let [x (+ x-offset (+ (* width 1/2) (* (+ minion 0.5) minion-spacing) x-spread))]
+        (let [x (+ x-offset minion-x-offset (+ (* width 1/2) (* (+ minion 0.5) minion-spacing) x-spread))]
           (symbol/price-label g cost
                               x (+ y-offset (util/mm->px -20))
                               x (+ y-offset (util/mm->px 85)))
@@ -198,7 +202,35 @@
               (symbol/empty-mask g x (+ y (util/mm->px 0.7)) (/ util/minion-size 4)))))
         ))
 
-    (let [y-offset 0
+
+    (doseq [[character-idx character] (->> data/characters
+                                           (sort-by :price)
+                                           (map-indexed vector))]
+      (let [token-image (draw/with-new-image [g2 (BufferedImage. 200 200 BufferedImage/TYPE_INT_ARGB)]
+                          (tokens/draw-token character g2 0 0))
+            x (+ 20 (* 150 character-idx))
+            y 30
+            size 200
+            clip (draw/ellipse (+ x (/ size 2)) (+ y (/ size 2)) 80)
+            ]
+
+        (draw/with-clip g clip
+          (.drawImage g token-image
+                      x y (+ x size) (+ y size)
+                      0 0 200 200
+                      nil))
+        (draw/shape g outline-style clip)
+
+        (symbol/price-label g (:price character)
+                            (+ x 40) (+ y 40)
+                            ;(+ x 100) (+ y 100)
+                            ;(/ (+ left right) 2) (+ (util/mm->px 15) y-offset)
+                            ;(/ (+ left right) 2) (+ (util/mm->px 28) y-offset)
+                            )
+
+        ))
+
+    #_(let [y-offset 0
           x-offset 50
           width (- width x-offset x-offset)]
       (doseq [[character-idx character] (->> data/characters

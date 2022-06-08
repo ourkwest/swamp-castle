@@ -19,7 +19,8 @@
         ;(draw/shape g2 (draw/fill-style Color/GREEN) rectangle)
         (doseq [x (range 0 100 2)
                 y (range 0 100 2)]
-          (let [color (draw/rgb 0 (+ 128 (rand-int 128)) 0 50)
+          (let [cap (+ 50 (rand-int 205))
+                color (draw/rgb (rand-int (/ cap 2)) cap (rand-int (/ cap 2)) 50)
                 ;rnd #(rand-nth [-1.5 -1 0 1 1.5])
                 xr (rand-nth [-1.5 -1 0 1 1.5])
                 yr (rand-nth [-1.5 -1 0 1 1.5])]
@@ -28,6 +29,35 @@
               (draw/line g2 (draw/line-style 1 color)
                          (+ x xr x-wrap) (+ y yr y-wrap)
                          (+ x xr x-wrap) (+ y yr y-wrap 10))))))
+      rectangle)))
+
+(def grass-2
+  (let [rectangle (Rectangle2D$Double. 0 0 100 100)]
+    (TexturePaint.
+      (draw/with-new-image [^Graphics2D g2 (BufferedImage. 100 100 BufferedImage/TYPE_INT_ARGB)]
+        ;(draw/shape g2 (draw/fill-style Color/GREEN) rectangle)
+        (doseq [x (range 0 100 2)
+                y (range 0 100 2)]
+          (let [cap (+ 50 (rand-int 205))
+                color (draw/rgb (rand-int (/ cap 2)) cap (rand-int (/ cap 2)) 50)
+                ;rnd #(rand-nth [-1.5 -1 0 1 1.5])
+                xr (rand-nth [-1.5 -1 0 1 1.5])
+                yr (rand-nth [-1.5 -1 0 1 1.5])]
+            (doseq [x-wrap [-100 0 100]
+                    y-wrap [-100 0 100]]
+              (draw/line g2 (draw/line-style 1 color)
+                         (+ x xr x-wrap) (+ y yr y-wrap)
+                         (+ x xr x-wrap) (+ y yr y-wrap 10)))))
+        (dotimes [_ 10]
+          (let [x (rand 100)
+                y (rand 100)]
+            (draw/line g2 (draw/line-style 5 (Color. 255 255 0 125)) x y x y)))
+        (dotimes [_ 4]
+          (let [x (rand 100)
+                y (rand 100)]
+            (draw/line g2 (draw/line-style 3 (Color. 255 140 0)) x y x y))
+          )
+        )
       rectangle)))
 
 (def mud
@@ -142,7 +172,7 @@
   (.setColor g Color/WHITE)
   (.fillRect g 0 0 width height)
 
-  (draw/shape g (draw/fill-style grass) (draw/rectangle 0 0 200 200))
+  (draw/shape g (draw/fill-style grass-2) (draw/rectangle 0 0 200 200))
   (draw/shape g (draw/fill-style cake-3) (draw/rectangle 200 0 200 200))
 
   (draw/shape g (draw/fill-style stone-slabs) (draw/rectangle 0 200 200 200))

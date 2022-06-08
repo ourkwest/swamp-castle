@@ -48,10 +48,11 @@
 
      (draw/shape g (draw/shape-style nil 0 color-price-outer) outer-poly)
      (let [extent 5]
-       (doseq [p (range 0 1 (/ 1 (util/mm->px extent)))]
-         (draw/line g (draw/line-style 1 (draw/rgb-lerp Color/WHITE (draw/rgb 255 255 255 0) p))
-                    (- x1 (* p (util/mm->px extent))) (+ y1 (util/mm->px 5))
-                    (+ x1 (util/mm->px 5)) (- y1 (* p (util/mm->px extent))))))
+       (draw/with-clip g outer-poly
+         (doseq [p (range 0 1 (/ 1 (util/mm->px extent)))]
+           (draw/line g (draw/line-style 1 (draw/rgb-lerp Color/WHITE (draw/rgb 255 255 255 0) p))
+                      (- x1 (* p (util/mm->px extent))) (+ y1 (util/mm->px 5))
+                      (+ x1 (util/mm->px 5)) (- y1 (* p (util/mm->px extent)))))))
      (draw/shape g (draw/line-style 1.5 Color/BLACK) outer-poly)
 
      (draw/shape g (draw/shape-style nil 0 color-price-inner) inner-poly)
@@ -159,7 +160,7 @@
      (apply draw/shape-add (for [theta (range 0 util/TAU (/ util/TAU point-count))]
                              (draw/rotate point-shape theta))))))
 
-(defn shield [g x y size & [shield-count]]
+(defn shield [g x y size & [shield-count bw?]]
   (let [cutout (util/mm->px (/ size 10))
         shape (draw/shape-subtract
                 (draw/shape-add
@@ -205,22 +206,23 @@
                        ; sides
                        (Ellipse2D$Float. (- x (* size 3)) (- y (* size 1.5)) (* 2.6 size) (* 3 size))
                        (Ellipse2D$Float. (+ x (* size 3) (- (* 2.6 size))) (- y (* size 1.5)) (* 2.6 size) (* 3 size)))
+        restyle (if bw? draw/grayscale identity)
         draw-star (fn [g x y]
-                    (draw/shape g (draw/shape-style Color/WHITE
-                                                    (* 0.6 (/ size 20))
-                                                    Color/YELLOW)
-                                (draw/translate (star (* size 0.3) 4) x y)))]
+                    (draw/shape g (restyle (draw/shape-style Color/WHITE
+                                                             (* 0.6 (/ size 20))
+                                                             Color/YELLOW))
+                      (draw/translate (star (* size 0.3) 4) x y)))]
 
     (draw/with-clip g shape
       (doseq [n (range (* 2 size))]
         (let [color (draw/rgb (- 150 (* 50 (/ n (* 2 size)))) (- 200 (* 50 (/ n (* 2 size)))) 255)]
-          (draw/line g (draw/line-style 1 color)
+          (draw/line g (restyle (draw/line-style 1 color))
                      (+ x (- size) n) (- y size) (+ x (- size) n) (+ y size size)))))
 
     (draw/with-clip g shape-inner
       (doseq [n (range (* 2 size))]
         (let [color (draw/rgb (+ 100 (* 50 (/ n (* 2 size)))) (+ 150 (* 50 (/ n (* 2 size)))) 255)]
-          (draw/line g (draw/line-style 1 color)
+          (draw/line g (restyle (draw/line-style 1 color))
                      (+ x (- size) n) (- y size) (+ x (- size) n) (+ y size size))))
 
       (if shield-count
@@ -235,21 +237,21 @@
           #_(draw/line g (draw/line-style (* 0.7 size) (draw/rgb ))
                      (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
                      (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
-          (draw/line g (draw/line-style (* 0.7 size) (draw/rgb 75 75 250))
+          (draw/line g (restyle (draw/line-style (* 0.7 size) (draw/rgb 75 75 250)))
                      (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
                      (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
 
           (doseq [[x-off y-off] [[-1 -1] [1 1] [1 -1] [-1 1]]]
-            (draw/text g (draw/text-style (util/mm->px 10) (draw/rgb 255 255 150 200) true)
+            (draw/text g (restyle (draw/text-style (util/mm->px 10) (draw/rgb 255 255 150 200) true))
                        (str shield-count) (+ x x-off) (+ y y-off (util/mm->px 0.8))))
-          (draw/text g (draw/text-style (util/mm->px 10) (draw/rgb 0 0 0 255) true)
+          (draw/text g (restyle (draw/text-style (util/mm->px 10) (draw/rgb 0 0 0 255) true))
                      (str shield-count) x (+ y (util/mm->px 0.8))))
         (do
-          (draw/line g (draw/line-style (* 0.7 size) Color/BLUE)
+          (draw/line g (restyle (draw/line-style (* 0.7 size) Color/BLUE))
                      (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
                      (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
 
-          (draw/line g (draw/line-style (* 0.5 size) Color/BLACK)
+          (draw/line g (restyle (draw/line-style (* 0.5 size) Color/BLACK))
                      (- x (* 0.8 size)) (+ (+ y (* 0.1 size)) (* 1.0 size))
                      (+ x (* 0.8 size)) (- (+ y (* 0.1 size)) (* 1.0 size)))
 
@@ -257,8 +259,8 @@
           (draw-star g (- x (* 0.0 size)) (+ (+ y (* 0.1 size)) (* 0.0 size)))
           (draw-star g (+ x (* 0.4 size)) (- (+ y (* 0.1 size)) (* 0.5 size))))))
 
-    (draw/shape g (draw/line-style 1.5) shape)
-    (draw/shape g (draw/line-style 1 Color/YELLOW) shape-inner)
+    (draw/shape g (restyle (draw/line-style 1.5)) shape)
+    (draw/shape g (restyle (draw/line-style 1 Color/YELLOW)) shape-inner)
 
     ))
 
@@ -644,12 +646,16 @@
   (shield g 220 220 10)
   (shield g 320 220 (* 120 1/5) 1)
   (shield g 420 220 (* 120 1/5) "∞")
+  (shield g 490 220 (* 120 1/5) nil true)
 
   (flag g 300 300 50 1/2)
   (flag g 200 300 40 1/2)
   (flag g 100 300 30 1/2)
   (flag g 100 500 30 1.2)
 
+  (.setColor g Color/BLACK)
+  (.fillRect g 0 0 300 300)
+  (price-label g 8 140 140 140 240)
 
   (doseq [[x y size] [[50 50 50]
                       [150 50 40]
@@ -658,7 +664,6 @@
     (vp g x y size :with-crown!))
 
   (comment
-    (price-label g 8 40 40 80 40)
     (role-mask g 40 100 20)
     (role-mask g 80 100 15)
     (role-mask g 120 100 10)
