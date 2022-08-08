@@ -6,7 +6,7 @@ Prototyping a board game.
 
 You can run this locally using the `leiningen` build tool.
 
-Alternatively it is deployed here: http://peterwestmacott.github.io/games/domination/index.html
+Alternatively it is deployed here: http://ourkwest.github.io/games/domination/index.html
 
 To get an interactive development environment run:
 
