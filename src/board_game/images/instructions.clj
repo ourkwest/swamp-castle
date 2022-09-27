@@ -1,6 +1,7 @@
 (ns board-game.images.instructions
   (:require
     [clj-pdf.core :as pdf]
+    [pdf-to-image.core :as to-image]
     [board-game.support.util :as util]
     [board-game.support.draw :as draw]
     [board-game.support.data :as data]
@@ -631,6 +632,9 @@
   )
 
 (defn build-instruction-image []
+
+  ;(to-image/convert (io/file "generated" "instructions.pdf"))
+
   (let [i1 (ImageIO/read (io/file "generated" "instructions-1.png"))
         i2 (ImageIO/read (io/file "generated" "instructions-2.png"))
         i3 (ImageIO/read (io/file "generated" "instructions-3.png"))
@@ -657,8 +661,8 @@
       (.drawImage g i5 (+ 2100 border) (+ 0 border) nil)
       (ImageIO/write back "png" (io/file "generated" "instructions-back.png")))))
 
-(render-instructions)
-;(build-instruction-image)
+;(render-instructions)
+(build-instruction-image)
 
 (comment
   ([[:image {:scale 25} ./generated/for-instructions/token_0.png]

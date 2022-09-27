@@ -11,7 +11,8 @@
                  [org.clojure/core.async "0.4.500"
                   :exclusions [org.clojure/tools.reader]]
                  [reagent "0.8.1"]
-                 [clj-pdf "2.5.8"]]
+                 [clj-pdf "2.5.8"]
+                 [pdf-to-image "0.1.0-SNAPSHOT"]]
 
   :plugins [[lein-figwheel "0.5.8"]
             [lein-ancient "0.6.15"]

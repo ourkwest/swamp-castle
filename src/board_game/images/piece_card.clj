@@ -124,10 +124,10 @@
           minion-spacing (* util/minion-size 11/10)
           x-offset (util/mm->px -3)
           x-spread (util/mm->px 15)
-          y-offset (+ (util/mm->px 80) 0)
-          shield-x-offset -10
-          player-x-offset 30
-          minion-x-offset 30
+          y-offset (+ (util/mm->px 80) 10)
+          shield-x-offset 15
+          player-x-offset 20
+          minion-x-offset 45
           inset-left 40]
       (doseq [[shield cost] {0 6
                              1 5
@@ -147,42 +147,48 @@
                                outline-style) x y (/ util/minion-size 2))
               (symbol/shield g x (- y (util/mm->px 0.5)) (int (/ util/minion-size 4)))))))
 
-      (doseq [[y1 y2 x label] [[-0.5 1.5 60 "2 Players"]
-                               [-0.5 2.5 30 "3 Players"]
-                               [-0.5 3.5 0 "4 Players"]]]
-        (draw/line g (draw/line-style 1 symbol/color-price-inner)
-                   (+ player-x-offset inset-left x 25) (+ y-offset (* y1 minion-spacing))
-                   (+ player-x-offset inset-left x) (+ y-offset (* y1 minion-spacing)))
-        (draw/line g (draw/line-style 1 symbol/color-price-inner)
-                   (+ player-x-offset inset-left 60 25) (+ y-offset (* y2 minion-spacing))
-                   (+ player-x-offset inset-left 0 x) (+ y-offset (* y2 minion-spacing)))
-        (draw/line g (draw/line-style 1 symbol/color-price-inner)
-                   (+ player-x-offset inset-left 0 x) (+ y-offset (* y1 minion-spacing))
-                   (+ player-x-offset inset-left 0 x) (+ y-offset (* y2 minion-spacing)))
+      (let [step 50]
+        (doseq [[y1 y2 x label] [[-0.5 1.5 (+ step step) "2 Players"]
+                                 [-0.5 2.5 step "3 Players"]
+                                 [-0.5 3.5 0 "4 Players"]]]
+          (doseq [prop (range 0 1 0.01)]
+            (let [color (draw/rgb-lerp symbol/color-price-inner
+                                       (draw/with-alpha symbol/color-price-inner 0)
+                                       (* prop))
+                  p (* prop prop)]
+              (draw/line g (draw/line-style 1 color)
+                         (+ player-x-offset inset-left x (* p (- step 5))) (+ y-offset (* y1 minion-spacing))
+                         (+ player-x-offset inset-left x) (+ y-offset (* y1 minion-spacing)))
+              (draw/line g (draw/line-style 1 color)
+                         (+ player-x-offset inset-left x (* p (+ step step step -5 (- x)))) (+ y-offset (* y2 minion-spacing))
+                         (+ player-x-offset inset-left 0 x) (+ y-offset (* y2 minion-spacing)))))
+          (draw/line g (draw/line-style 1 symbol/color-price-inner)
+                     (+ player-x-offset inset-left 0 x) (+ y-offset (* y1 minion-spacing))
+                     (+ player-x-offset inset-left 0 x) (+ y-offset (* y2 minion-spacing)))
 
-        #_(draw/shape g (draw/fill-style Color/WHITE)
-                    (draw/shape-add (draw/rectangle (+ (* width 1/2) -10 x) (+ y-offset (* (+ (* y1 3/4) (* y2 1/4)) minion-spacing))
-                                                    20 (* (+ (* y1 3/4) (* y2 1/4)) minion-spacing))))
+          #_(draw/shape g (draw/fill-style Color/WHITE)
+              (draw/shape-add (draw/rectangle (+ (* width 1/2) -10 x) (+ y-offset (* (+ (* y1 3/4) (* y2 1/4)) minion-spacing))
+                                              20 (* (+ (* y1 3/4) (* y2 1/4)) minion-spacing))))
 
-        (let [text-shape (-> (draw/text->shape g (draw/text-style 20 Color/BLACK) label)
-                             (draw/rotate (* Math/PI -1/2))
-                             (draw/translate (+ player-x-offset inset-left 0 x) (+ y-offset (* (/ (+ y1 y2) 2) minion-spacing))))
-              bounds (.getBounds text-shape)
-              box (-> bounds
-                      (draw/scale 1.35)
-                      (draw/center (+ player-x-offset inset-left 0 x) (+ y-offset (* (/ (+ y1 y2) 2) minion-spacing))) (.getBounds))
-              top (draw/ellipse (.getX box) (- (.getY box) (* (.getWidth box) 1/2)) (.getWidth box) (.getWidth box))
-              bottom (draw/ellipse (.getX box) (+ (.getY box) (.getHeight box) (* (.getWidth box) -1/2)) (.getWidth box) (.getWidth box))
-              lozenge (draw/shape-add top box bottom)]
-          (draw/shape g (draw/shape-style Color/BLACK 1.5 symbol/color-price-inner) lozenge)
-          ;(draw/shape g (draw/fill-style symbol/color-price-inner) top)
-          ;(draw/shape g (draw/fill-style symbol/color-price-inner) bottom)
+          (let [text-shape (-> (draw/text->shape g (draw/text-style 20 Color/BLACK) label)
+                               (draw/rotate (* Math/PI -1/2))
+                               (draw/translate (+ player-x-offset inset-left 0 x) (+ y-offset (* (/ (+ y1 y2) 2) minion-spacing))))
+                bounds (.getBounds text-shape)
+                box (-> bounds
+                        (draw/scale 1.35)
+                        (draw/center (+ player-x-offset inset-left 0 x) (+ y-offset (* (/ (+ y1 y2) 2) minion-spacing))) (.getBounds))
+                top (draw/ellipse (.getX box) (- (.getY box) (* (.getWidth box) 1/2)) (.getWidth box) (.getWidth box))
+                bottom (draw/ellipse (.getX box) (+ (.getY box) (.getHeight box) (* (.getWidth box) -1/2)) (.getWidth box) (.getWidth box))
+                lozenge (draw/shape-add top box bottom)]
+            (draw/shape g (draw/shape-style Color/BLACK 1.5 symbol/color-price-inner) lozenge)
+            ;(draw/shape g (draw/fill-style symbol/color-price-inner) top)
+            ;(draw/shape g (draw/fill-style symbol/color-price-inner) bottom)
 
 
-          (draw/shape g (draw/fill-style Color/BLACK)
-                      (draw/translate text-shape 1 0)))
+            (draw/shape g (draw/fill-style Color/BLACK)
+              (draw/translate text-shape 1 0)))
 
-        )
+          ))
 
       (doseq [[minion cost] {1 1
                              2 2
@@ -209,7 +215,7 @@
       (let [token-image (draw/with-new-image [g2 (BufferedImage. 200 200 BufferedImage/TYPE_INT_ARGB)]
                           (tokens/draw-token character g2 0 0))
             x (+ 20 (* 150 character-idx))
-            y 30
+            y 20
             size 200
             clip (draw/ellipse (+ x (/ size 2)) (+ y (/ size 2)) 80)
             ]
