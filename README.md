@@ -1,37 +1,29 @@
-# Cakewalk (working title)
+# Cakewalk
 
 Prototyping a board game.
 
-## Setup
+## What is this repo?
 
-You can run this locally using the `leiningen` build tool.
+A collection of bits of code that have been used to prototype the boardgame 'Cakewalk'. Some are in an advanced state of
+decomposition.
 
-Alternatively it is deployed here: http://peterwestmacott.github.io/games/domination/index.html
+What may still be usable is the code to generate the artwork for printing copies of the game.
 
-To get an interactive development environment run:
+## How do I use it?
 
-    lein figwheel
+1. Install [leiningen](https://github.com/technomancy/leiningen/tree/master) (yes, it's an old project)
+2. Run the following command:
 
-and open your browser at [localhost:3449](http://localhost:3449/).
-This will auto compile and send all changes to the browser without the
-need to reload. After the compilation process is complete, you will
-get a Browser Connected REPL. An easy way to try it is:
+`lein repl`
 
-    (js/alert "Am I connected?")
+3. When the REPL is running:
 
-and you should see an alert in the browser window.
-
-To clean all compiled files:
-
-    lein clean
-
-To create a production build run:
-
-    lein do clean, cljsbuild once min
-
-And open your browser in `resources/public/index.html`. You will not
-get live reloading, nor a REPL. 
+```
+(require '[board-game.images.core :as core])
+(core/create-all-images)
+(exit)
+```
 
 ## Copyright Notice
 
-Copyright © 2017-2022 Rachel Westmacott
+Copyright © 2017-2025 Rachel K. Westmacott

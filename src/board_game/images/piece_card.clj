@@ -328,4 +328,5 @@
     (println (str (Math/round ^Double total-height-mm) "mm x "
                   (Math/round ^Double total-width-mm) "mm"))))
 
-(draw-piece-card)
+(comment
+  (draw-piece-card))

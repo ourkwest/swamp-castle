@@ -1,17 +1,21 @@
 (ns board-game.images.tokens
-  (:require [board-game.support.draw :as draw]
-            [board-game.support.data :as data]
+  (:require [board-game.support.data :as data]
+            [board-game.support.draw :as draw]
             [board-game.support.symbol :as symbol]
+            [board-game.support.texture :as texture]
             [board-game.support.util :as util]
             [clojure.java.io :as io]
-            [board-game.support.texture :as texture])
+            [see.core :as see])
   (:import
-    [java.awt Graphics2D Color Font]
-    [java.awt.geom Ellipse2D$Double AffineTransform]
+    [java.awt Color Font Graphics2D]
+    [java.awt RenderingHints]
     [java.awt.font FontRenderContext]
-    [javax.imageio ImageIO]
+    [java.awt.geom AffineTransform Ellipse2D$Double]
+    [java.awt.image BufferedImage RenderedImage]
+    [java.awt.image BufferedImage]
     [java.io File]
-    [java.awt.image RenderedImage BufferedImage]))
+    [javax.imageio ImageIO]))
+
 
 
 (defn indexed [c]
@@ -248,24 +252,21 @@
 (defn ffilter [pred coll]
   (first (filter pred coll)))
 
-(do ; test block
+(def width 1000)
+(def height 800)
 
-  (require '[see.core :as see])
-  (import '[java.awt.image BufferedImage]
-          '[java.awt RenderingHints])
+(defn render-token-images [] ; test block
 
   ;(def size 1000)
-  (def width 1000)
-  (def height 800)
 
-  (defonce ^BufferedImage image (BufferedImage. width height BufferedImage/TYPE_INT_ARGB))
-  (defonce refresh-fn (see/see image :only-draw-when-updated? true))
-  (defonce g (.getGraphics image))
-  (.setRenderingHint g RenderingHints/KEY_ANTIALIASING RenderingHints/VALUE_ANTIALIAS_ON)
-  (.setRenderingHint g RenderingHints/KEY_RENDERING RenderingHints/VALUE_RENDER_QUALITY)
-
-  (.setColor g Color/WHITE)
-  (.fillRect g 0 0 width height)
+  ;(defonce ^BufferedImage image (BufferedImage. width height BufferedImage/TYPE_INT_ARGB))
+  ;(defonce refresh-fn (see/see image :only-draw-when-updated? true))
+  ;(defonce g (.getGraphics image))
+  ;(.setRenderingHint g RenderingHints/KEY_ANTIALIASING RenderingHints/VALUE_ANTIALIAS_ON)
+  ;(.setRenderingHint g RenderingHints/KEY_RENDERING RenderingHints/VALUE_RENDER_QUALITY)
+  ;
+  ;(.setColor g Color/WHITE)
+  ;(.fillRect g 0 0 width height)
 
   ;(doseq [[idx c] (map-indexed vector data/characters)]
   ;  (let [row (quot idx 3)
@@ -274,7 +275,16 @@
   ;
   ;(refresh-fn)
 
-  (let [to-print (io/file "generated" "to-print")
+  (let [image (BufferedImage. width height BufferedImage/TYPE_INT_ARGB)
+        refresh-fn (see/see image :only-draw-when-updated? true)
+        g ^Graphics2D (.getGraphics image)
+
+        _ (.setRenderingHint g RenderingHints/KEY_ANTIALIASING RenderingHints/VALUE_ANTIALIAS_ON)
+        _ (.setRenderingHint g RenderingHints/KEY_RENDERING RenderingHints/VALUE_RENDER_QUALITY)
+        _ (.setColor g Color/WHITE)
+        _ (.fillRect g 0 0 width height)
+
+        to-print (io/file "generated" "to-print")
         for-instructions (io/file "generated" "for-instructions")
         token-clip (draw/ellipse 100 100 81)
         token-images (for [[idx c] (map-indexed vector data/characters)]
@@ -349,7 +359,7 @@
         (let [image (get (vec images) (+ x (* y (count xs))))
               xp (* x 200)
               yp (* y 200)]
-          (.drawImage g image nil xp yp)
+          (.drawImage g ^BufferedImage image nil (int xp) (int yp))
           (draw/shape g
             (draw/line-style 1 (draw/rgb 255 0 0 128))
             (draw/ellipse (+ xp 100) (+ yp 100) 80))

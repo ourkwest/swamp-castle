@@ -1497,11 +1497,20 @@
 
     (println (str (Math/round (double width-mm)) " mm X " (Math/round (double height-mm)) " mm"))))
 
-(do
-  ; Standard Matte (Smooth Finish) Custom Size Game Board Gameboard
-  ; Length: 350mm, Width: 267mm, (Bi-Fold)
+(defn draw-board-quickly []
+  (binding [*quick?* true]
+    (draw-board)))
+
+(defn draw-board-properly []
   (binding [*quick?* false]
     (draw-board)))
+
+(comment
+  ; Standard Matte (Smooth Finish) Custom Size Game Board Gameboard
+  ; Length: 350mm, Width: 267mm, (Bi-Fold)
+  (draw-board-properly)
+
+  )
 
 #_(do ; test block
 

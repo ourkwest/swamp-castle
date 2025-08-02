@@ -661,53 +661,57 @@
       (.drawImage g i5 (+ 2100 border) (+ 0 border) nil)
       (ImageIO/write back "png" (io/file "generated" "instructions-back.png")))))
 
-;(render-instructions)
-(build-instruction-image)
+(comment
+
+  (render-instructions)
+  (build-instruction-image)
+
+  )
 
 (comment
-  ([[:image {:scale 25} ./generated/for-instructions/token_0.png]
-    [:cell {:leading 14, :colspan 2}
-     [:heading.smaller [:chunk.bold Bronze]]
-     [:phrase nil  [:phrase You have  [:chunk.bold 1]  more to spend at turn's end. ] nil nil]]]
-   [[:cell {:leading 14, :colspan 2}
-     [:heading.smaller [:chunk.bold Silver]]
-     [:phrase nil  [:phrase You have  [:chunk.bold 2]  more to spend at turn's end. ] nil nil]]
-    [:image {:scale 25} ./generated/for-instructions/token_1.png]]
-   [[:image {:scale 25} ./generated/for-instructions/token_2.png]
-    [:cell {:leading 14, :colspan 2}
-     [:heading.smaller [:chunk.bold Gold]]
-     [:phrase nil  [:phrase You have  [:chunk.bold 3]  more to spend at turn's end. ] nil nil]] ]
-   [[:cell {:leading 14, :colspan 2}
-     [:heading.smaller [:chunk.bold Farmer]]
-     [:phrase nil [:phrase You may move this  [:chunk.special.minion Minion]  to an adjacent hex. ] [:phrase You have  [:chunk.bold 2]  more to spend at turn's end. ] nil nil]]
-    [:image {:scale 25} ./generated/for-instructions/token_3.png] ]
-   [[:image {:scale 25} ./generated/for-instructions/token_4.png]
-    [:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold Scout]]
-     [:phrase nil [:phrase You may move this  [:chunk.special.minion Minion]  up to  [:phrase.bold 4  hexes] . ] nil nil [:phrase You may attack one other  [:chunk.special.minion Minion]  on an adjacent hex  doing  [:chunk.bold 1]  damage.]]]]
-   [[:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold Archer]]
-     [:phrase nil [:phrase You may move this  [:chunk.special.minion Minion]  up to  [:phrase.bold 2  hexes] . ] nil nil [:phrase You may attack one other  [:chunk.special.minion Minion]  up to  [:phrase.bold 3  hexes]  away  doing  [:chunk.bold 2]  damage.]]]
-    [:image {:scale 25} ./generated/for-instructions/token_5.png] ]
-   [[:image {:scale 25} ./generated/for-instructions/token_7.png]
-    [:cell {:leading 14, :colspan 2}
-     [:heading.smaller [:chunk.bold Smithy]]
-     [:phrase nil [:phrase You may move this  [:chunk.special.minion Minion]  to an adjacent hex. ] nil [:phrase You may take the next  2  cheapest  [:chunk.special.shield Shields]  from the piece card from any row. ] nil]] ]
-   [[:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold Knight]]
-     [:phrase nil [:phrase You may move this  [:chunk.special.minion Minion]  up to  [:phrase.bold 4  hexes] . ] nil nil [:phrase You may attack one other  [:chunk.special.minion Minion]  on an adjacent hex  doing  [:chunk.bold 3]  damage.]]]
-    [:image {:scale 25} ./generated/for-instructions/token_8.png] ]
-   [[:image {:scale 25} ./generated/for-instructions/token_6.png]
-    [:cell {:leading 14, :colspan 2}
-     [:heading.smaller [:chunk.bold Chocolate Cake]]
-     [:phrase [:phrase Sacrifice this  [:chunk.special.token Token]  and  [:chunk.special.minion Minion]  for a  [:chunk.special.vp Victory Point] . ]  nil nil nil]]]
-   [[:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold nil]] One minion may move 1 extra hex this turn.]
-    [:image {:scale 25} ./generated/for-instructions/bonus_0.png] ]
-   [[:image {:scale 25} ./generated/for-instructions/bonus_1.png]
-    [:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold nil]] You have 1 extra spend at the end of your turn.] ]
-   [[:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold nil]] One minion may attack with 1 extra range this turn.]
-    [:image {:scale 25} ./generated/for-instructions/bonus_2.png] ]
-   [[:image {:scale 25} ./generated/for-instructions/bonus_3.png]
-    [:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold nil]] One minion may attack with 1 extra damage this turn.] ]
-   [[:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold nil]] You may take 1 free shield from the bank this turn.]
-    [:image {:scale 25} ./generated/for-instructions/bonus_4.png] ])
+  ;([[:image {:scale 25} ./generated/for-instructions/token_0.png]
+  ;  [:cell {:leading 14, :colspan 2}
+  ;   [:heading.smaller [:chunk.bold Bronze]]
+  ;   [:phrase nil  [:phrase You have  [:chunk.bold 1]  more to spend at turn's end. ] nil nil]]]
+  ; [[:cell {:leading 14, :colspan 2}
+  ;   [:heading.smaller [:chunk.bold Silver]]
+  ;   [:phrase nil  [:phrase You have  [:chunk.bold 2]  more to spend at turn's end. ] nil nil]]
+  ;  [:image {:scale 25} ./generated/for-instructions/token_1.png]]
+  ; [[:image {:scale 25} ./generated/for-instructions/token_2.png]
+  ;  [:cell {:leading 14, :colspan 2}
+  ;   [:heading.smaller [:chunk.bold Gold]]
+  ;   [:phrase nil  [:phrase You have  [:chunk.bold 3]  more to spend at turn's end. ] nil nil]] ]
+  ; [[:cell {:leading 14, :colspan 2}
+  ;   [:heading.smaller [:chunk.bold Farmer]]
+  ;   [:phrase nil [:phrase You may move this  [:chunk.special.minion Minion]  to an adjacent hex. ] [:phrase You have  [:chunk.bold 2]  more to spend at turn's end. ] nil nil]]
+  ;  [:image {:scale 25} ./generated/for-instructions/token_3.png] ]
+  ; [[:image {:scale 25} ./generated/for-instructions/token_4.png]
+  ;  [:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold Scout]]
+  ;   [:phrase nil [:phrase You may move this  [:chunk.special.minion Minion]  up to  [:phrase.bold 4  hexes] . ] nil nil [:phrase You may attack one other  [:chunk.special.minion Minion]  on an adjacent hex  doing  [:chunk.bold 1]  damage.]]]]
+  ; [[:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold Archer]]
+  ;   [:phrase nil [:phrase You may move this  [:chunk.special.minion Minion]  up to  [:phrase.bold 2  hexes] . ] nil nil [:phrase You may attack one other  [:chunk.special.minion Minion]  up to  [:phrase.bold 3  hexes]  away  doing  [:chunk.bold 2]  damage.]]]
+  ;  [:image {:scale 25} ./generated/for-instructions/token_5.png] ]
+  ; [[:image {:scale 25} ./generated/for-instructions/token_7.png]
+  ;  [:cell {:leading 14, :colspan 2}
+  ;   [:heading.smaller [:chunk.bold Smithy]]
+  ;   [:phrase nil [:phrase You may move this  [:chunk.special.minion Minion]  to an adjacent hex. ] nil [:phrase You may take the next  2  cheapest  [:chunk.special.shield Shields]  from the piece card from any row. ] nil]] ]
+  ; [[:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold Knight]]
+  ;   [:phrase nil [:phrase You may move this  [:chunk.special.minion Minion]  up to  [:phrase.bold 4  hexes] . ] nil nil [:phrase You may attack one other  [:chunk.special.minion Minion]  on an adjacent hex  doing  [:chunk.bold 3]  damage.]]]
+  ;  [:image {:scale 25} ./generated/for-instructions/token_8.png] ]
+  ; [[:image {:scale 25} ./generated/for-instructions/token_6.png]
+  ;  [:cell {:leading 14, :colspan 2}
+  ;   [:heading.smaller [:chunk.bold Chocolate Cake]]
+  ;   [:phrase [:phrase Sacrifice this  [:chunk.special.token Token]  and  [:chunk.special.minion Minion]  for a  [:chunk.special.vp Victory Point] . ]  nil nil nil]]]
+  ; [[:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold nil]] One minion may move 1 extra hex this turn.]
+  ;  [:image {:scale 25} ./generated/for-instructions/bonus_0.png] ]
+  ; [[:image {:scale 25} ./generated/for-instructions/bonus_1.png]
+  ;  [:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold nil]] You have 1 extra spend at the end of your turn.] ]
+  ; [[:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold nil]] One minion may attack with 1 extra range this turn.]
+  ;  [:image {:scale 25} ./generated/for-instructions/bonus_2.png] ]
+  ; [[:image {:scale 25} ./generated/for-instructions/bonus_3.png]
+  ;  [:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold nil]] One minion may attack with 1 extra damage this turn.] ]
+  ; [[:cell {:leading 14, :colspan 2} [:heading.smaller [:chunk.bold nil]] You may take 1 free shield from the bank this turn.]
+  ;  [:image {:scale 25} ./generated/for-instructions/bonus_4.png] ])
 
 
   )

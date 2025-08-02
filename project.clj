@@ -107,4 +107,6 @@
                                   :init (set! *print-length* 50)
                                   :nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}}
 
+  :jvm-opts ["--add-opens=java.base/java.lang=ALL-UNNAMED"]
+
 )

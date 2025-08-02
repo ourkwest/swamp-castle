@@ -617,6 +617,11 @@
 
   )
 
+(defn draw-cake-image []
+  (draw/new-image-file (io/file "generated" "for-instructions") "cake"
+                       (fn [g]
+                         (cake g 100 100 90 4))))
+
 (do ; test block
 
   (require '[see.core :as see])
